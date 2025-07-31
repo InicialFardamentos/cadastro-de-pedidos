@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Pedidos de Fardamentos</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Biblioteca para gerar PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .modal-enter { animation: fadeIn 0.3s ease-out; }
+        .modal-leave { animation: fadeOut 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes fadeOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
+        .printable-area { background-color: white; }
+        img.mockup-image:not([src]), img.mockup-image[src=""] { display: none; }
+        img.mockup-image:error { content: url('https://placehold.co/400x400/e2e8f0/94a3b8?text=Arte+Indispon%C3%ADvel'); }
+        /* Estilo para o input de arquivo */
+        input[type="file"]::file-selector-button {
+            @apply bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition duration-300 border-none mr-4 cursor-pointer;
+        }
+    </style>
+</head>
+<body class="antialiased text-gray-800">
+
+    <!-- Container Principal -->
+    <div id="app" class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos</h1>
+                <p class="text-gray-600 mt-1">Adicione, edite e visualize os pedidos de fardamentos.</p>
+                <p id="userIdContainer" class="text-xs text-gray-400 mt-2"></p>
+            </div>
+            <button id="addOrderBtn" class="mt-4 sm:mt-0 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                Novo Pedido
+            </button>
+        </header>
+        <main id="ordersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div id="loadingIndicator" class="text-center col-span-full">Carregando pedidos...</div>
+        </main>
+    </div>
+
+    <!-- Modal para Adicionar/Editar Pedido -->
+    <div id="orderModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto modal-enter">
+            <form id="orderForm" class="p-8">
+                <h2 id="modalTitle" class="text-2xl font-bold mb-6">Novo Pedido</h2>
+                <input type="hidden" id="orderId">
+                <input type="hidden" id="existingMockupUrl">
+
+                <!-- Dados do Cliente -->
+                <fieldset class="mb-6 border p-4 rounded-lg">
+                    <legend class="text-lg font-semibold px-2">Dados do Cliente</legend>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                        <input type="text" id="clientName" placeholder="Nome do Cliente" class="p-2 border rounded-md w-full" required>
+                        <input type="text" id="clientPhone" placeholder="Telefone" class="p-2 border rounded-md w-full">
+                    </div>
+                </fieldset>
+
+                <!-- Detalhes do Pedido -->
+                <fieldset class="mb-6 border p-4 rounded-lg">
+                    <legend class="text-lg font-semibold px-2">Detalhes do Pedido</legend>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                        <div>
+                            <label for="orderDate" class="text-sm font-medium text-gray-700">Data do Pedido</label>
+                            <input type="date" id="orderDate" class="p-2 border rounded-md w-full mt-1">
+                        </div>
+                        <div>
+                            <label for="deliveryDate" class="text-sm font-medium text-gray-700">Data da Entrega</label>
+                            <input type="date" id="deliveryDate" class="p-2 border rounded-md w-full mt-1">
+                        </div>
+                        <div>
+                            <label for="orderStatus" class="text-sm font-medium text-gray-700">Status</label>
+                            <select id="orderStatus" class="p-2 border rounded-md w-full mt-1 bg-white">
+                                <option value="Pendente">Pendente</option>
+                                <option value="Confirmado">Confirmado</option>
+                                <option value="Em Produção">Em Produção</option>
+                                <option value="Finalizado">Finalizado</option>
+                                <option value="Entregue">Entregue</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <label for="mockupFile" class="text-sm font-medium text-gray-700">Arquivo da Arte (Mockup)</label>
+                        <input type="file" id="mockupFile" class="p-2 border rounded-md w-full mt-1 text-sm text-gray-500" accept="image/*">
+                        <p class="text-xs text-gray-500 mt-1">Selecione um arquivo de imagem. Para editar, deixe em branco se não quiser alterar a arte atual.</p>
+                    </div>
+                </fieldset>
+
+                <!-- Itens e Personalização -->
+                <fieldset class="mb-6 border p-4 rounded-lg">
+                    <legend class="text-lg font-semibold px-2">Itens e Personalização</legend>
+                    <div id="itemsContainer" class="space-y-3 mt-2"></div>
+                    <button type="button" id="addItemBtn" class="mt-4 bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition duration-300">Adicionar Item</button>
+                </fieldset>
+
+                <!-- Financeiro -->
+                <fieldset class="mb-6 border p-4 rounded-lg">
+                    <legend class="text-lg font-semibold px-2">Financeiro</legend>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                        <input type="number" id="quantity" placeholder="Quantidade Total" class="p-2 border rounded-md w-full" readonly>
+                        <input type="number" step="0.01" id="unitPrice" placeholder="Valor Unitário" class="p-2 border rounded-md w-full">
+                        <input type="number" step="0.01" id="downPayment" placeholder="Adiantamento (R$)" class="p-2 border rounded-md w-full">
+                        <input type="text" id="paymentMethod" placeholder="Forma de Pagamento" class="p-2 border rounded-md w-full">
+                    </div>
+                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-lg font-semibold">
+                         <p>Valor Total: <span id="totalPrice" class="text-blue-600">R$ 0,00</span></p>
+                         <p>Resta Pagar: <span id="remainingPayment" class="text-red-600">R$ 0,00</span></p>
+                    </div>
+                </fieldset>
+                
+                <!-- Botões de Ação -->
+                <div class="flex justify-end items-center space-x-4 mt-8">
+                    <div id="uploadIndicator" class="text-sm text-blue-600 font-semibold hidden">Enviando imagem...</div>
+                    <button type="button" id="cancelBtn" class="bg-gray-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-gray-600 transition duration-300">Cancelar</button>
+                    <button type="submit" id="saveBtn" class="bg-green-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-green-700 transition duration-300">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Visualizar e Imprimir -->
+    <div id="viewModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col modal-enter">
+            <div id="printableArea" class="p-8 overflow-y-auto printable-area"></div>
+            <div class="p-4 bg-gray-100 border-t flex justify-end space-x-4">
+                 <button id="closeViewBtn" class="bg-gray-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-gray-600 transition duration-300">Fechar</button>
+                 <button id="printPdfBtn" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0" /></svg>
+                    Gerar PDF
+                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script type="module">
+        // Importações do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, getDoc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+        // ************************************************************************************
+        // ** IMPORTANTE: PARA PUBLICAR NO GITHUB, SUBSTITUA AS CONFIGURAÇÕES ABAIXO      **
+        // ** PELAS CONFIGURAÇÕES REAIS DO SEU PROJETO FIREBASE. VEJA O GUIA.             **
+        // ************************************************************************************
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : { 
+                apiKey: "COLE_SUA_API_KEY_AQUI",
+                authDomain: "SEU_PROJETO.firebaseapp.com",
+                projectId: "SEU_PROJECT_ID_AQUI",
+                storageBucket: "SEU_PROJETO.appspot.com",
+                messagingSenderId: "SEU_MESSAGING_SENDER_ID",
+                appId: "SEU_APP_ID"
+              };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        
+        // Inicializa Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const storage = getStorage(app); // Inicializa o Storage
+        
+        let userId = null;
+        let dbCollection;
+
+        // --- AUTENTICAÇÃO ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                document.getElementById('userIdContainer').textContent = `ID de Usuário: ${userId}`;
+                dbCollection = collection(db, `artifacts/${appId}/users/${userId}/orders`);
+                loadOrders();
+            } else {
+                 try {
+                    // Esta parte é para funcionar no ambiente de desenvolvimento.
+                    // Em produção (GitHub), ele irá para o 'else' e usará o login anônimo.
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Erro na autenticação:", error);
+                    document.getElementById('loadingIndicator').textContent = 'Erro de autenticação.';
+                }
+            }
+        });
+
+        // --- ELEMENTOS DO DOM ---
+        const addOrderBtn = document.getElementById('addOrderBtn');
+        const orderModal = document.getElementById('orderModal');
+        const orderForm = document.getElementById('orderForm');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const modalTitle = document.getElementById('modalTitle');
+        const ordersList = document.getElementById('ordersList');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const uploadIndicator = document.getElementById('uploadIndicator');
+        const viewModal = document.getElementById('viewModal');
+        const closeViewBtn = document.getElementById('closeViewBtn');
+        const printPdfBtn = document.getElementById('printPdfBtn');
+        const itemsContainer = document.getElementById('itemsContainer');
+        const addItemBtn = document.getElementById('addItemBtn');
+
+        // Campos do formulário
+        const orderIdInput = document.getElementById('orderId');
+        const clientNameInput = document.getElementById('clientName');
+        const clientPhoneInput = document.getElementById('clientPhone');
+        const orderDateInput = document.getElementById('orderDate');
+        const deliveryDateInput = document.getElementById('deliveryDate');
+        const orderStatusInput = document.getElementById('orderStatus');
+        const mockupFileInput = document.getElementById('mockupFile');
+        const existingMockupUrlInput = document.getElementById('existingMockupUrl');
+        const quantityInput = document.getElementById('quantity');
+        const unitPriceInput = document.getElementById('unitPrice');
+        const downPaymentInput = document.getElementById('downPayment');
+        const paymentMethodInput = document.getElementById('paymentMethod');
+        const totalPriceEl = document.getElementById('totalPrice');
+        const remainingPaymentEl = document.getElementById('remainingPayment');
+        
+        // --- FUNÇÕES ---
+
+        const openModal = () => orderModal.classList.remove('hidden');
+        const closeModal = () => orderModal.classList.add('hidden');
+        const openViewModal = () => viewModal.classList.remove('hidden');
+        const closeViewModal = () => viewModal.classList.add('hidden');
+
+        const calculateTotals = () => {
+            const items = document.querySelectorAll('.item-row');
+            const quantity = items.length;
+            const unitPrice = parseFloat(unitPriceInput.value) || 0;
+            const downPayment = parseFloat(downPaymentInput.value) || 0;
+            const totalPrice = quantity * unitPrice;
+            const remainingPayment = totalPrice - downPayment;
+            quantityInput.value = quantity;
+            totalPriceEl.textContent = `R$ ${totalPrice.toFixed(2)}`;
+            remainingPaymentEl.textContent = `R$ ${remainingPayment.toFixed(2)}`;
+        };
+
+        const createItemRow = (item = { size: '', name: '', obs: '' }) => {
+            const itemRow = document.createElement('div');
+            itemRow.className = 'grid grid-cols-10 gap-2 item-row items-center';
+            itemRow.innerHTML = `
+                <input type="text" value="${item.size}" placeholder="Tamanho" class="col-span-2 p-2 border rounded-md item-size">
+                <input type="text" value="${item.name}" placeholder="Nome (para estampa)" class="col-span-4 p-2 border rounded-md item-name">
+                <input type="text" value="${item.obs}" placeholder="Observação" class="col-span-3 p-2 border rounded-md item-obs">
+                <button type="button" class="col-span-1 text-red-500 hover:text-red-700 removeItemBtn"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg></button>
+            `;
+            itemsContainer.appendChild(itemRow);
+            itemRow.querySelector('.removeItemBtn').addEventListener('click', () => {
+                itemRow.remove();
+                calculateTotals();
+            });
+        };
+
+        const resetForm = () => {
+            orderForm.reset();
+            orderIdInput.value = '';
+            existingMockupUrlInput.value = '';
+            modalTitle.textContent = 'Novo Pedido';
+            itemsContainer.innerHTML = '';
+            orderDateInput.valueAsDate = new Date();
+            deliveryDateInput.value = '';
+            calculateTotals();
+        };
+
+        const loadOrders = () => {
+            if (!userId) return;
+            loadingIndicator.textContent = 'Carregando pedidos...';
+            const q = query(dbCollection);
+            onSnapshot(q, (snapshot) => {
+                ordersList.innerHTML = '';
+                if (snapshot.empty) {
+                    loadingIndicator.textContent = 'Nenhum pedido encontrado. Adicione um novo!';
+                    ordersList.appendChild(loadingIndicator);
+                } else {
+                    loadingIndicator.style.display = 'none';
+                    snapshot.forEach(doc => {
+                        const order = doc.data();
+                        const orderCard = document.createElement('div');
+                        orderCard.className = 'bg-white rounded-lg shadow p-5 flex flex-col justify-between';
+                        orderCard.innerHTML = `
+                            <div>
+                                <div class="flex justify-between items-start">
+                                    <h3 class="font-bold text-lg text-gray-800">${order.clientName}</h3>
+                                    <span class="text-sm font-medium py-1 px-3 rounded-full ${getStatusColor(order.orderStatus)}">${order.orderStatus}</span>
+                                </div>
+                                <p class="text-gray-600 text-sm mt-1">Pedido: ${new Date(order.orderDate).toLocaleDateString()}</p>
+                                <p class="text-gray-600 text-sm">${order.items.length} Itens</p>
+                            </div>
+                            <div class="flex justify-end space-x-2 mt-4">
+                                <button class="view-btn text-blue-600 hover:text-blue-800" data-id="${doc.id}">Visualizar</button>
+                                <button class="edit-btn text-yellow-600 hover:text-yellow-800" data-id="${doc.id}">Editar</button>
+                                <button class="delete-btn text-red-600 hover:text-red-800" data-id="${doc.id}">Excluir</button>
+                            </div>
+                        `;
+                        ordersList.appendChild(orderCard);
+                    });
+                }
+            }, (error) => {
+                console.error("Erro ao carregar pedidos: ", error);
+                loadingIndicator.textContent = 'Erro ao carregar os pedidos.';
+            });
+        };
+        
+        const getStatusColor = (status) => {
+            const colors = {
+                'Pendente': 'bg-yellow-100 text-yellow-800', 'Confirmado': 'bg-blue-100 text-blue-800',
+                'Em Produção': 'bg-indigo-100 text-indigo-800', 'Finalizado': 'bg-green-100 text-green-800',
+                'Entregue': 'bg-gray-100 text-gray-800'
+            };
+            return colors[status] || 'bg-gray-100 text-gray-800';
+        };
+
+        const saveOrder = async (e) => {
+            e.preventDefault();
+            if (!userId) { alert("Você não está autenticado."); return; }
+
+            saveBtn.disabled = true;
+            uploadIndicator.classList.remove('hidden');
+
+            const file = mockupFileInput.files[0];
+            let mockupUrl = existingMockupUrlInput.value;
+
+            try {
+                if (file) {
+                    const storageRef = ref(storage, `artifacts/${appId}/${userId}/images/${Date.now()}_${file.name}`);
+                    const snapshot = await uploadBytes(storageRef, file);
+                    mockupUrl = await getDownloadURL(snapshot.ref);
+                }
+
+                const items = Array.from(document.querySelectorAll('.item-row')).map(row => ({
+                    size: row.querySelector('.item-size').value,
+                    name: row.querySelector('.item-name').value,
+                    obs: row.querySelector('.item-obs').value,
+                }));
+
+                const orderData = {
+                    clientName: clientNameInput.value, clientPhone: clientPhoneInput.value,
+                    orderDate: orderDateInput.value, deliveryDate: deliveryDateInput.value,
+                    orderStatus: orderStatusInput.value, mockupUrl: mockupUrl,
+                    items: items, quantity: parseInt(quantityInput.value) || 0,
+                    unitPrice: parseFloat(unitPriceInput.value) || 0,
+                    downPayment: parseFloat(downPaymentInput.value) || 0,
+                    paymentMethod: paymentMethodInput.value,
+                };
+
+                const id = orderIdInput.value;
+                if (id) {
+                    await updateDoc(doc(db, dbCollection.path, id), orderData);
+                } else {
+                    await addDoc(dbCollection, orderData);
+                }
+                closeModal();
+            } catch (error) {
+                console.error("Erro ao salvar pedido: ", error);
+                alert("Ocorreu um erro ao salvar o pedido.");
+            } finally {
+                saveBtn.disabled = false;
+                uploadIndicator.classList.add('hidden');
+            }
+        };
+
+        const editOrder = async (id) => {
+            resetForm();
+            const orderRef = doc(db, dbCollection.path, id);
+            const docSnap = await getDoc(orderRef);
+            if (docSnap.exists()) {
+                const order = docSnap.data();
+                modalTitle.textContent = 'Editar Pedido';
+                orderIdInput.value = id;
+                clientNameInput.value = order.clientName;
+                clientPhoneInput.value = order.clientPhone;
+                orderDateInput.value = order.orderDate;
+                deliveryDateInput.value = order.deliveryDate;
+                orderStatusInput.value = order.orderStatus;
+                existingMockupUrlInput.value = order.mockupUrl;
+                unitPriceInput.value = order.unitPrice;
+                downPaymentInput.value = order.downPayment;
+                paymentMethodInput.value = order.paymentMethod;
+                itemsContainer.innerHTML = '';
+                order.items.forEach(item => createItemRow(item));
+                calculateTotals();
+                openModal();
+            }
+        };
+
+        const deleteOrder = async (id) => {
+            if (confirm('Tem certeza que deseja excluir este pedido?')) {
+                await deleteDoc(doc(db, dbCollection.path, id));
+            }
+        };
+        
+        const viewOrder = async (id) => {
+            const orderRef = doc(db, dbCollection.path, id);
+            const docSnap = await getDoc(orderRef);
+            if (docSnap.exists()) {
+                const order = docSnap.data();
+                const printableArea = document.getElementById('printableArea');
+                const total = (order.quantity || 0) * (order.unitPrice || 0);
+                const remaining = total - (order.downPayment || 0);
+                let itemsHtml = order.items.map(item => `<tr class="border-b"><td class="py-2 px-4">${item.size}</td><td class="py-2 px-4">${item.name}</td><td class="py-2 px-4">${item.obs}</td></tr>`).join('');
+                
+                printableArea.innerHTML = `
+                    <div class="p-4">
+                        <h2 class="text-2xl font-bold mb-4">Detalhes do Pedido - ${order.clientName}</h2>
+                        <div class="grid grid-cols-2 gap-x-8 gap-y-4 mb-6">
+                            <div><strong>Cliente:</strong> ${order.clientName}</div>
+                            <div><strong>Telefone:</strong> ${order.clientPhone || 'N/A'}</div>
+                            <div><strong>Data do Pedido:</strong> ${new Date(order.orderDate).toLocaleDateString()}</div>
+                            <div><strong>Data da Entrega:</strong> ${order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : 'N/A'}</div>
+                            <div><strong>Status:</strong> ${order.orderStatus}</div>
+                        </div>
+                        <h3 class="font-bold text-lg mb-2">Itens e Personalização</h3>
+                        <table class="w-full text-left border-collapse mb-6"><thead><tr class="bg-gray-100"><th class="py-2 px-4 font-semibold">Tamanho</th><th class="py-2 px-4 font-semibold">Nome</th><th class="py-2 px-4 font-semibold">Observação</th></tr></thead><tbody>${itemsHtml}</tbody></table>
+                        <div class="grid grid-cols-2 gap-x-8 gap-y-4 mb-6">
+                            <div><strong>Quantidade Total:</strong> ${order.quantity || 0}</div>
+                            <div><strong>Valor Unitário:</strong> R$ ${(order.unitPrice || 0).toFixed(2)}</div>
+                            <div><strong>Valor Total:</strong> R$ ${total.toFixed(2)}</div>
+                            <div><strong>Adiantamento:</strong> R$ ${(order.downPayment || 0).toFixed(2)}</div>
+                            <div class="font-bold"><strong>Resta Pagar:</strong> R$ ${remaining.toFixed(2)}</div>
+                            <div><strong>Forma de Pagamento:</strong> ${order.paymentMethod || 'N/A'}</div>
+                        </div>
+                        ${order.mockupUrl ? `<div class="mt-6"><h3 class="font-bold text-lg mb-2">Arte / Mockup</h3><img src="${order.mockupUrl}" alt="Mockup" class="max-w-full md:max-w-md rounded-lg shadow-md mockup-image" crossorigin="anonymous"></div>` : ''}
+                    </div>
+                `;
+                printPdfBtn.setAttribute('data-filename', `Pedido_${order.clientName.replace(/\s/g, '_')}.pdf`);
+                openViewModal();
+            }
+        };
+
+        const generatePdf = async () => {
+            const printableArea = document.getElementById('printableArea');
+            const filename = printPdfBtn.getAttribute('data-filename');
+            try {
+                const canvas = await html2canvas(printableArea, { scale: 2, useCORS: true });
+                const imgData = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const imgProps = pdf.getImageProperties(imgData);
+                const ratio = imgProps.height / imgProps.width;
+                const widthInPdf = pdfWidth - 20;
+                const heightInPdf = widthInPdf * ratio;
+                pdf.addImage(imgData, 'PNG', 10, 10, widthInPdf, heightInPdf);
+                pdf.save(filename);
+            } catch (error) {
+                console.error("Erro ao gerar PDF:", error);
+                alert("Não foi possível gerar o PDF. A imagem da arte pode não ter carregado corretamente.");
+            }
+        };
+
+        // --- EVENT LISTENERS ---
+        addOrderBtn.addEventListener('click', () => { resetForm(); createItemRow(); openModal(); });
+        cancelBtn.addEventListener('click', closeModal);
+        orderForm.addEventListener('submit', saveOrder);
+        ordersList.addEventListener('click', (e) => {
+            const target = e.target;
+            const id = target.dataset.id;
+            if (id) {
+                if (target.classList.contains('edit-btn')) editOrder(id);
+                else if (target.classList.contains('delete-btn')) deleteOrder(id);
+                else if (target.classList.contains('view-btn')) viewOrder(id);
+            }
+        });
+        closeViewBtn.addEventListener('click', closeViewModal);
+        printPdfBtn.addEventListener('click', generatePdf);
+        addItemBtn.addEventListener('click', () => createItemRow());
+        orderForm.addEventListener('input', (e) => {
+            if (['unitPrice', 'downPayment'].includes(e.target.id)) calculateTotals();
+        });
+    </script>
+</body>
+</html>
