@@ -153,49 +153,40 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
-        // ************************************************************************************
-        // ** IMPORTANTE: PARA PUBLICAR NO GITHUB, SUBSTITUA AS CONFIGURAÇÕES ABAIXO      **
-        // ** PELAS CONFIGURAÇÕES REAIS DO SEU PROJETO FIREBASE. VEJA O GUIA.             **
-        // ************************************************************************************
-        const firebaseConfig = typeof __firebase_config !== 'undefined' 
-            ? JSON.parse(__firebase_config) 
-            : { 
-                apiKey: "COLE_SUA_API_KEY_AQUI",
-                authDomain: "SEU_PROJETO.firebaseapp.com",
-                projectId: "SEU_PROJECT_ID_AQUI",
-                storageBucket: "SEU_PROJETO.appspot.com",
-                messagingSenderId: "SEU_MESSAGING_SENDER_ID",
-                appId: "SEU_APP_ID"
-              };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // Sua configuração pessoal do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCy3LxIJ_cY1R-t7qPJPzSYBUyvpGV9zXw",
+            authDomain: "meus-pedidos-app-521d6.firebaseapp.com",
+            projectId: "meus-pedidos-app-521d6",
+            storageBucket: "meus-pedidos-app-521d6.appspot.com",
+            messagingSenderId: "782022322907",
+            appId: "1:782022322907:web:c36fa6f6ed321dce313afe"
+        };
         
         // Inicializa Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-        const storage = getStorage(app); // Inicializa o Storage
+        const storage = getStorage(app);
         
         let userId = null;
+        const appId = firebaseConfig.projectId; // Usando o ID do projeto como ID da aplicação
         let dbCollection;
 
         // --- AUTENTICAÇÃO ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 userId = user.uid;
-                document.getElementById('userIdContainer').textContent = `ID de Usuário: ${userId}`;
+                document.getElementById('userIdContainer').textContent = `Conectado com ID: ${userId}`;
+                // O caminho no Firestore agora usa o ID do projeto real
                 dbCollection = collection(db, `artifacts/${appId}/users/${userId}/orders`);
                 loadOrders();
             } else {
                  try {
-                    // Esta parte é para funcionar no ambiente de desenvolvimento.
-                    // Em produção (GitHub), ele irá para o 'else' e usará o login anônimo.
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
+                    // Tenta o login anônimo para novos usuários no site publicado
+                    await signInAnonymously(auth);
                 } catch (error) {
-                    console.error("Erro na autenticação:", error);
+                    console.error("Erro na autenticação anônima:", error);
                     document.getElementById('loadingIndicator').textContent = 'Erro de autenticação.';
                 }
             }
@@ -453,7 +444,6 @@
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
                 const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = pdf.internal.pageSize.getHeight();
                 const imgProps = pdf.getImageProperties(imgData);
                 const ratio = imgProps.height / imgProps.width;
                 const widthInPdf = pdfWidth - 20;
