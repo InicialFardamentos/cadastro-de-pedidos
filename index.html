@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciador de Pedidos de Fardamentos</title>
+    <title>Gerenciador de Pedidos de Fardamentos 1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,7 +27,6 @@
 </head>
 <body class="antialiased text-gray-800">
 
-    <!-- Container Principal -->
     <div id="app" class="container mx-auto p-4 sm:p-6 lg:p-8">
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
             <div>
@@ -44,7 +43,6 @@
         </main>
     </div>
 
-    <!-- Modal para Adicionar/Editar Pedido -->
     <div id="orderModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-y-auto">
             <form id="orderForm" class="p-8 space-y-6">
@@ -110,7 +108,6 @@
         </div>
     </div>
 
-    <!-- Templates para clonagem -->
     <template id="partTemplate">
         <div class="part-item border p-3 rounded-md bg-gray-50 relative">
             <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
@@ -168,9 +165,11 @@
         let userId = null;
         const appId = firebaseConfig.projectId;
         let dbCollection;
+        let allOrders = [];
 
         const DOM = {
             app: document.getElementById('app'),
+            addOrderBtn: document.getElementById('addOrderBtn'),
             orderModal: document.getElementById('orderModal'),
             orderForm: document.getElementById('orderForm'),
             ordersList: document.getElementById('ordersList'),
@@ -191,7 +190,6 @@
 
         let currentOrderType = 'comum';
         let partCounter = 0;
-        let allOrders = [];
 
         const fileToBase64 = (file) => new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -295,7 +293,7 @@
             document.getElementById('orderId').value = '';
             document.getElementById('orderId').dataset.existingUrls = '[]';
             document.getElementById('existingFilesContainer').innerHTML = '';
-            DOM.orderDate.valueAsDate = new Date();
+            document.getElementById('orderDate').valueAsDate = new Date();
             currentOrderType = 'comum';
             DOM.btnComum.classList.add('active');
             DOM.btnDetalhado.classList.remove('active');
@@ -404,7 +402,11 @@
             DOM.partsContainer.innerHTML = '';
             DOM.financialsContainer.innerHTML = '';
             partCounter = 0;
-            (orderData.parts || []).forEach(addPart);
+            if (orderData.parts && orderData.parts.length > 0) {
+                orderData.parts.forEach(addPart);
+            } else {
+                addPart(); // Add a default part if none exist
+            }
             
             currentOrderType = orderData.orderType || 'comum';
             if (currentOrderType === 'comum') {
@@ -445,10 +447,11 @@
 
             let itemsHtml = '';
             if (order.orderType === 'comum') {
-                itemsHtml = Object.entries(order.items || {}).map(([category, sizes]) => `
-                    <h4 class="font-semibold mt-3">${category}</h4>
-                    <div class="flex flex-wrap gap-2 text-sm">${Object.entries(sizes).map(([size, qty]) => `<span class="bg-gray-100 px-2 py-1 rounded">${size}: ${qty}</span>`).join('')}</div>
-                `).join('');
+                itemsHtml = Object.entries(order.items || {}).map(([category, sizes]) => {
+                    const sizeEntries = Object.entries(sizes);
+                    if (sizeEntries.length === 0) return '';
+                    return `<h4 class="font-semibold mt-3">${category}</h4><div class="flex flex-wrap gap-2 text-sm">${sizeEntries.map(([size, qty]) => `<span class="bg-gray-100 px-2 py-1 rounded">${size}: ${qty}</span>`).join('')}</div>`
+                }).join('');
             } else {
                 itemsHtml = `<table class="w-full text-left text-sm mt-2"><thead><tr class="bg-gray-100"><th class="px-2 py-1">Tipo</th><th class="px-2 py-1">Tamanho</th><th class="px-2 py-1">Nome</th><th class="px-2 py-1">Número</th></tr></thead><tbody>
                 ${(order.items || []).map(i => `<tr><td class="border px-2 py-1">${i.type}</td><td class="border px-2 py-1">${i.size}</td><td class="border px-2 py-1">${i.name}</td><td class="border px-2 py-1">${i.number}</td></tr>`).join('')}
@@ -462,18 +465,18 @@
                         <div class="grid grid-cols-2 gap-x-8 gap-y-2 mb-4 text-sm">
                             <div><strong>Cliente:</strong> ${order.clientName}</div>
                             <div><strong>Telefone:</strong> ${order.clientPhone || 'N/A'}</div>
-                            <div><strong>Data do Pedido:</strong> ${new Date(order.orderDate).toLocaleDateString()}</div>
-                            <div><strong>Data da Entrega:</strong> ${order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : 'N/A'}</div>
+                            <div><strong>Data do Pedido:</strong> ${order.orderDate ? new Date(order.orderDate.replace(/-/g, '\/')).toLocaleDateString() : 'N/A'}</div>
+                            <div><strong>Data da Entrega:</strong> ${order.deliveryDate ? new Date(order.deliveryDate.replace(/-/g, '\/')).toLocaleDateString() : 'N/A'}</div>
                             <div><strong>Status:</strong> ${order.orderStatus}</div>
                         </div>
                         <h3 class="font-bold text-lg mt-4">Descrição das Peças</h3>
                         <table class="w-full text-left text-sm mt-2"><thead><tr class="bg-gray-100"><th class="px-2 py-1">Tipo</th><th class="px-2 py-1">Material</th><th class="px-2 py-1">Cor Malha</th><th class="px-2 py-1">Cor Detalhes</th><th class="px-2 py-1 text-center">Qtd</th><th class="px-2 py-1 text-right">V. Un.</th><th class="px-2 py-1 text-right">Subtotal</th></tr></thead><tbody>${partsHtml}</tbody></table>
                         <h3 class="font-bold text-lg mt-4">Itens e Personalização (${order.orderType})</h3>
-                        ${itemsHtml}
+                        <div class="text-sm p-2 border rounded-md mt-2 bg-gray-50">${itemsHtml || 'Nenhum item especificado.'}</div>
                         <h3 class="font-bold text-lg mt-4">Observação Geral</h3>
                         <p class="text-sm border p-2 rounded-md bg-gray-50 mt-2">${order.generalObservation || 'Nenhuma.'}</p>
                         <h3 class="font-bold text-lg mt-4">Financeiro</h3>
-                        <div class="grid grid-cols-2 gap-4 text-sm mt-2">
+                        <div class="grid grid-cols-2 gap-4 text-sm mt-2 p-3 bg-gray-100 rounded-lg">
                             <div><strong>Valor Total:</strong> <span class="font-bold">R$ ${totalValue.toFixed(2)}</span></div>
                             <div><strong>Adiantamento:</strong> R$ ${(order.downPayment || 0).toFixed(2)}</div>
                             <div><strong>Forma de Pagamento:</strong> ${order.paymentMethod || 'N/A'}</div>
@@ -501,8 +504,18 @@
                 const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const ratio = canvas.height / canvas.width;
-                const pdfHeight = (pdfWidth - 20) * ratio;
-                pdf.addImage(imgData, 'PNG', 10, 10, pdfWidth - 20, pdfHeight);
+                let pdfHeight = (pdfWidth - 20) * ratio;
+                let heightLeft = pdfHeight;
+                let position = 10;
+                pdf.addImage(imgData, 'PNG', 10, position, pdfWidth - 20, pdfHeight);
+                heightLeft -= (pdf.internal.pageSize.getHeight() - 20);
+
+                while (heightLeft > 0) {
+                    position = heightLeft - pdfHeight + 10;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 10, position, pdfWidth - 20, pdfHeight);
+                    heightLeft -= (pdf.internal.pageSize.getHeight() - 20);
+                }
                 pdf.save(`Pedido_${clientName.replace(/\s/g, '_')}.pdf`);
             } catch (error) { console.error("Erro ao gerar PDF:", error); alert("Não foi possível gerar o PDF."); }
         };
@@ -526,7 +539,7 @@
                                     <h3 class="font-bold text-lg text-gray-800">${order.clientName}</h3>
                                     <span class="text-sm font-medium py-1 px-3 rounded-full">${order.orderStatus}</span>
                                 </div>
-                                <p class="text-gray-600 text-sm mt-1">Pedido: ${new Date(order.orderDate).toLocaleDateString()}</p>
+                                <p class="text-gray-600 text-sm mt-1">Pedido: ${order.orderDate ? new Date(order.orderDate.replace(/-/g, '\/')).toLocaleDateString() : 'N/A'}</p>
                                 <p class="text-gray-600 text-sm">${totalQty} Itens</p>
                             </div>
                             <div class="flex justify-end space-x-2 mt-4">
@@ -543,51 +556,58 @@
                 DOM.loadingIndicator.textContent = 'Erro ao carregar os pedidos.';
             });
         };
-
-        DOM.app.addEventListener('click', (e) => {
-            if (e.target.closest('.view-btn')) viewOrder(e.target.closest('.view-btn').dataset.id);
-            if (e.target.closest('.edit-btn')) editOrder(e.target.closest('.edit-btn').dataset.id);
-            if (e.target.closest('.delete-btn')) deleteOrder(e.target.closest('.delete-btn').dataset.id);
-            if (e.target.id === 'closeViewBtn') DOM.viewModal.classList.add('hidden');
-            if (e.target.id === 'printPdfBtn') generatePdf();
-        });
-
-        DOM.addPartBtn.addEventListener('click', () => addPart());
-        DOM.financialsContainer.addEventListener('input', updateFinancials);
-        DOM.downPayment.addEventListener('input', updateFinancials);
         
-        DOM.btnComum.addEventListener('click', () => {
-            currentOrderType = 'comum';
-            DOM.btnComum.classList.add('active');
-            DOM.btnDetalhado.classList.remove('active');
-            renderComumView();
-        });
-        DOM.btnDetalhado.addEventListener('click', () => {
-            currentOrderType = 'detalhado';
-            DOM.btnDetalhado.classList.add('active');
-            DOM.btnComum.classList.remove('active');
-            renderDetalhadoView();
-        });
-        
-        document.getElementById('addOrderBtn').addEventListener('click', () => {
-            resetForm();
-            DOM.orderModal.classList.remove('hidden');
-        });
+        function setupEventListeners() {
+            DOM.app.addEventListener('click', (e) => {
+                if (e.target.closest('.view-btn')) viewOrder(e.target.closest('.view-btn').dataset.id);
+                if (e.target.closest('.edit-btn')) editOrder(e.target.closest('.edit-btn').dataset.id);
+                if (e.target.closest('.delete-btn')) deleteOrder(e.target.closest('.delete-btn').dataset.id);
+                if (e.target.id === 'closeViewBtn') DOM.viewModal.classList.add('hidden');
+                if (e.target.id === 'printPdfBtn') generatePdf();
+            });
 
-        DOM.cancelBtn.addEventListener('click', () => DOM.orderModal.classList.add('hidden'));
-        DOM.orderForm.addEventListener('submit', saveOrder);
+            DOM.addPartBtn.addEventListener('click', () => addPart());
+            DOM.financialsContainer.addEventListener('input', updateFinancials);
+            DOM.downPayment.addEventListener('input', updateFinancials);
+            
+            DOM.btnComum.addEventListener('click', () => {
+                currentOrderType = 'comum';
+                DOM.btnComum.classList.add('active');
+                DOM.btnDetalhado.classList.remove('active');
+                renderComumView();
+            });
+            DOM.btnDetalhado.addEventListener('click', () => {
+                currentOrderType = 'detalhado';
+                DOM.btnDetalhado.classList.add('active');
+                DOM.btnComum.classList.remove('active');
+                renderDetalhadoView();
+            });
+            
+            DOM.addOrderBtn.addEventListener('click', () => {
+                resetForm();
+                DOM.orderModal.classList.remove('hidden');
+            });
 
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                userId = user.uid;
-                dbCollection = collection(db, `artifacts/${appId}/users/${userId}/orders`);
-                loadOrders();
-            } else {
-                try { await signInAnonymously(auth); } catch (error) {
-                    console.error("Erro na autenticação:", error);
-                    DOM.loadingIndicator.textContent = 'Erro de autenticação.';
+            DOM.cancelBtn.addEventListener('click', () => DOM.orderModal.classList.add('hidden'));
+            DOM.orderForm.addEventListener('submit', saveOrder);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    dbCollection = collection(db, `artifacts/${appId}/users/${userId}/orders`);
+                    loadOrders();
+                } else {
+                    try { 
+                        await signInAnonymously(auth); 
+                    } catch (error) {
+                        console.error("Erro na autenticação:", error);
+                        DOM.loadingIndicator.textContent = 'Erro de autenticação.';
+                    }
                 }
-            }
+            });
         });
     </script>
 </body>
