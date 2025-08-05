@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciador de Pedidos de Fardamentos</title>
+    <title>Gerenciador de Pedidos de Fardamentos 1.0 </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,7 +31,7 @@
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos</h1>
-                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos. 1.0 </p>
+                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos.</p>
             </div>
             <button id="addOrderBtn" class="mt-4 sm:mt-0 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -268,7 +268,7 @@
                 html += `<div class="p-3 border rounded-md"><h4 class="font-semibold mb-2">${category}</h4><div class="grid grid-cols-3 md:grid-cols-7 gap-2">`;
                 categories[category].forEach(size => {
                     const value = itemsData[category]?.[size] || '';
-                    html += `<div><label class="text-xs text-center block">${size}</label><input type="number" class="size-input" data-category="${category}" data-size="${size}" value="${value}"></div>`;
+                    html += `<div><label class="text-xs text-center block">${size}</label><input type="number" min="0" class="size-input" data-category="${category}" data-size="${size}" value="${value}"></div>`;
                 });
                 html += `</div></div>`;
             }
@@ -309,6 +309,58 @@
             updateFinancials();
         };
 
+        const collectFormData = () => {
+            const orderData = {
+                clientName: document.getElementById('clientName').value || '',
+                clientPhone: document.getElementById('clientPhone').value || '',
+                orderStatus: document.getElementById('orderStatus').value || 'Pendente',
+                orderDate: document.getElementById('orderDate').value || new Date().toISOString().split('T')[0],
+                deliveryDate: document.getElementById('deliveryDate').value || '',
+                generalObservation: document.getElementById('generalObservation').value || '',
+                orderType: currentOrderType,
+                parts: [],
+                items: currentOrderType === 'comum' ? {} : [],
+                downPayment: parseFloat(DOM.downPayment.value) || 0,
+                paymentMethod: document.getElementById('paymentMethod').value || '',
+                mockupUrls: []
+            };
+
+            DOM.partsContainer.querySelectorAll('.part-item').forEach(p => {
+                const partId = p.dataset.partId;
+                const finItem = DOM.financialsContainer.querySelector(`.financial-item[data-part-id="${partId}"]`);
+                orderData.parts.push({
+                    type: p.querySelector('.part-type').value || '',
+                    material: p.querySelector('.part-material').value || '',
+                    colorMain: p.querySelector('.part-color-main').value || '',
+                    colorDetails: p.querySelector('.part-color-details').value || '',
+                    quantity: parseFloat(finItem.querySelector('.financial-quantity').value) || 0,
+                    unitPrice: parseFloat(finItem.querySelector('.financial-price').value) || 0,
+                });
+            });
+
+            if (currentOrderType === 'comum') {
+                DOM.itemsContent.querySelectorAll('.size-input').forEach(input => {
+                    const value = parseInt(input.value);
+                    if (value > 0) { // Only save if there's a quantity
+                        const { category, size } = input.dataset;
+                        if (!orderData.items[category]) orderData.items[category] = {};
+                        orderData.items[category][size] = value;
+                    }
+                });
+            } else {
+                DOM.itemsContent.querySelectorAll('.detailed-item-row').forEach(row => {
+                    const type = row.querySelector('.item-det-type').value;
+                    const size = row.querySelector('.item-det-size').value;
+                    const name = row.querySelector('.item-det-name').value;
+                    const number = row.querySelector('.item-det-number').value;
+                    if (type || size || name || number) {
+                        orderData.items.push({ type, size, name, number });
+                    }
+                });
+            }
+            return orderData;
+        }
+
         const saveOrder = async (e) => {
             e.preventDefault();
             DOM.saveBtn.disabled = true;
@@ -321,62 +373,20 @@
                 const newUrls = (await Promise.all(uploadPromises)).filter(Boolean);
                 const existingUrls = JSON.parse(document.getElementById('orderId').dataset.existingUrls || '[]');
                 
-                const orderData = {
-                    clientName: document.getElementById('clientName').value,
-                    clientPhone: document.getElementById('clientPhone').value,
-                    orderStatus: document.getElementById('orderStatus').value,
-                    orderDate: document.getElementById('orderDate').value,
-                    deliveryDate: document.getElementById('deliveryDate').value,
-                    mockupUrls: [...existingUrls, ...newUrls],
-                    generalObservation: document.getElementById('generalObservation').value,
-                    orderType: currentOrderType,
-                    parts: [],
-                    items: currentOrderType === 'comum' ? {} : [],
-                    downPayment: parseFloat(DOM.downPayment.value) || 0,
-                    paymentMethod: document.getElementById('paymentMethod').value,
-                };
-
-                DOM.partsContainer.querySelectorAll('.part-item').forEach(p => {
-                    const partId = p.dataset.partId;
-                    const finItem = DOM.financialsContainer.querySelector(`.financial-item[data-part-id="${partId}"]`);
-                    orderData.parts.push({
-                        type: p.querySelector('.part-type').value,
-                        material: p.querySelector('.part-material').value,
-                        colorMain: p.querySelector('.part-color-main').value,
-                        colorDetails: p.querySelector('.part-color-details').value,
-                        quantity: parseFloat(finItem.querySelector('.financial-quantity').value) || 0,
-                        unitPrice: parseFloat(finItem.querySelector('.financial-price').value) || 0,
-                    });
-                });
-
-                if (currentOrderType === 'comum') {
-                    DOM.itemsContent.querySelectorAll('.size-input').forEach(input => {
-                        if (input.value) {
-                            const { category, size } = input.dataset;
-                            if (!orderData.items[category]) orderData.items[category] = {};
-                            orderData.items[category][size] = parseInt(input.value);
-                        }
-                    });
-                } else {
-                    DOM.itemsContent.querySelectorAll('.detailed-item-row').forEach(row => {
-                        const type = row.querySelector('.item-det-type').value;
-                        const size = row.querySelector('.item-det-size').value;
-                        const name = row.querySelector('.item-det-name').value;
-                        const number = row.querySelector('.item-det-number').value;
-                        if(type || size || name || number) {
-                            orderData.items.push({ type, size, name, number });
-                        }
-                    });
-                }
-
+                const orderData = collectFormData();
+                orderData.mockupUrls = [...existingUrls, ...newUrls];
+                
                 const id = document.getElementById('orderId').value;
-                if (id) await updateDoc(doc(db, dbCollection.path, id), orderData);
-                else await addDoc(dbCollection, orderData);
+                if (id) {
+                    await updateDoc(doc(db, dbCollection.path, id), orderData);
+                } else {
+                    await addDoc(dbCollection, orderData);
+                }
                 
                 DOM.orderModal.classList.add('hidden');
             } catch (error) {
-                console.error("Erro ao salvar:", error);
-                alert("Ocorreu um erro ao salvar o pedido.");
+                console.error("Erro detalhado ao salvar:", error);
+                alert("Ocorreu um erro ao salvar o pedido. Verifique o console para mais detalhes.");
             } finally {
                 DOM.saveBtn.disabled = false;
                 DOM.uploadIndicator.classList.add('hidden');
