@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciador de Pedidos de Fardamentos 1.0 </title>
+    <title>Gerenciador de Pedidos de Fardamentos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,7 +31,7 @@
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos</h1>
-                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos.</p>
+                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos. 1.1 </p>
             </div>
             <button id="addOrderBtn" class="mt-4 sm:mt-0 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -341,7 +341,7 @@
             if (currentOrderType === 'comum') {
                 DOM.itemsContent.querySelectorAll('.size-input').forEach(input => {
                     const value = parseInt(input.value);
-                    if (value > 0) { // Only save if there's a quantity
+                    if (!isNaN(value) && value > 0) {
                         const { category, size } = input.dataset;
                         if (!orderData.items[category]) orderData.items[category] = {};
                         orderData.items[category][size] = value;
