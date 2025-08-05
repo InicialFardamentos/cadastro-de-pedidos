@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciador de Pedidos de Fardamentos 1.0</title>
+    <title>Gerenciador de Pedidos de Fardamentos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,7 +31,7 @@
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos</h1>
-                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos.</p>
+                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos. 1.0 </p>
             </div>
             <button id="addOrderBtn" class="mt-4 sm:mt-0 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -89,12 +89,16 @@
                 <fieldset class="border p-4 rounded-lg">
                     <legend class="text-lg font-semibold px-2">6. Financeiro</legend>
                     <div id="financialsContainer" class="space-y-4 mb-4"></div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 border-t pt-4">
                         <input type="number" step="0.01" id="downPayment" placeholder="Adiantamento (R$)" class="p-2 border rounded-md w-full">
                         <input type="text" id="paymentMethod" placeholder="Forma de Pagamento" class="p-2 border rounded-md w-full">
                         <div class="bg-gray-100 p-3 rounded-lg text-center">
                             <p class="text-sm text-gray-600">Total do Pedido</p>
                             <p id="grandTotal" class="text-2xl font-bold text-blue-600">R$ 0,00</p>
+                        </div>
+                        <div class="bg-red-100 p-3 rounded-lg text-center">
+                            <p class="text-sm text-red-700">Resta Pagar</p>
+                            <p id="remainingTotal" class="text-2xl font-bold text-red-600">R$ 0,00</p>
                         </div>
                     </div>
                 </fieldset>
@@ -185,6 +189,7 @@
             uploadIndicator: document.getElementById('uploadIndicator'),
             viewModal: document.getElementById('viewModal'),
             grandTotal: document.getElementById('grandTotal'),
+            remainingTotal: document.getElementById('remainingTotal'),
             downPayment: document.getElementById('downPayment')
         };
 
@@ -222,7 +227,9 @@
                 item.querySelector('.financial-subtotal').textContent = `R$ ${subtotal.toFixed(2)}`;
                 grandTotal += subtotal;
             });
+            const downPayment = parseFloat(DOM.downPayment.value) || 0;
             DOM.grandTotal.textContent = `R$ ${grandTotal.toFixed(2)}`;
+            DOM.remainingTotal.textContent = `R$ ${(grandTotal - downPayment).toFixed(2)}`;
         };
 
         const addPart = (partData = {}) => {
@@ -255,7 +262,7 @@
         };
         
         const renderComumView = (itemsData = {}) => {
-            const categories = { 'Normal': ['PP', 'P', 'M', 'G', 'GG', 'XG'], 'Baby Look': ['PP', 'P', 'M', 'G', 'GG', 'XG'], 'Infantil': ['2', '4', '6', '8', '10', '12'] };
+            const categories = { 'Baby Look': ['PP', 'P', 'M', 'G', 'GG', 'XG'], 'Normal': ['PP', 'P', 'M', 'G', 'GG', 'XG'], 'Infantil': ['2 anos', '4 anos', '6 anos', '8 anos', '10 anos', '12 anos'] };
             let html = '<div class="space-y-4">';
             for (const category in categories) {
                 html += `<div class="p-3 border rounded-md"><h4 class="font-semibold mb-2">${category}</h4><div class="grid grid-cols-3 md:grid-cols-7 gap-2">`;
@@ -405,7 +412,7 @@
             if (orderData.parts && orderData.parts.length > 0) {
                 orderData.parts.forEach(addPart);
             } else {
-                addPart(); // Add a default part if none exist
+                addPart(); 
             }
             
             currentOrderType = orderData.orderType || 'comum';
