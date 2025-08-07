@@ -31,10 +31,10 @@
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos</h1>
-                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos. 1.1 </p>
+                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos 1.2.</p>
             </div>
             <button id="addOrderBtn" class="mt-4 sm:mt-0 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 a 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                 Novo Pedido
             </button>
         </header>
@@ -167,7 +167,6 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
         let userId = null;
-        const appId = firebaseConfig.projectId;
         let dbCollection;
         let allOrders = [];
 
@@ -378,7 +377,7 @@
                 
                 const id = document.getElementById('orderId').value;
                 if (id) {
-                    await updateDoc(doc(db, dbCollection.path, id), orderData);
+                    await updateDoc(doc(dbCollection, id), orderData);
                 } else {
                     await addDoc(dbCollection, orderData);
                 }
@@ -443,7 +442,7 @@
         const deleteOrder = async (id) => {
             if (confirm('Tem certeza que deseja excluir este pedido?')) {
                 try {
-                    await deleteDoc(doc(db, dbCollection.path, id));
+                    await deleteDoc(doc(dbCollection, id));
                 } catch(error) {
                     alert('Erro ao excluir pedido.');
                     console.error(error);
@@ -614,7 +613,7 @@
             onAuthStateChanged(auth, async (user) => {
                 if (user) {
                     userId = user.uid;
-                    dbCollection = collection(db, `artifacts/${appId}/users/${userId}/orders`);
+                    dbCollection = collection(db, `users/${userId}/orders`); // CAMINHO CORRIGIDO
                     loadOrders();
                 } else {
                     try { 
