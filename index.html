@@ -31,7 +31,7 @@
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos</h1>
-                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos 1.3.</p>
+                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos 1.4.</p>
             </div>
             <button id="addOrderBtn" class="mt-4 sm:mt-0 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -466,7 +466,7 @@
                 itemsHtml = Object.entries(order.items || {}).map(([category, sizes]) => {
                     const sizeEntries = Object.entries(sizes);
                     if (sizeEntries.length === 0) return '';
-                    return `<h4 class="font-semibold mt-3">${category}</h4><div class="flex flex-wrap gap-2 text-sm">${sizeEntries.map(([size, qty]) => `<span class="bg-gray-100 px-2 py-1 rounded">${size}: ${qty}</span>`).join('')}</div>`
+                    return `<div class="mt-3"><h4 class="font-semibold">${category}</h4><div class="flex flex-wrap gap-2 text-sm">${sizeEntries.map(([size, qty]) => `<span class="bg-gray-100 px-2 py-1 rounded">${size}: ${qty}</span>`).join('')}</div></div>`
                 }).join('');
             } else {
                 itemsHtml = `<table class="w-full text-left text-sm mt-2"><thead><tr class="bg-gray-100"><th class="px-2 py-1">Tipo</th><th class="px-2 py-1">Tamanho</th><th class="px-2 py-1">Nome</th><th class="px-2 py-1">Número</th></tr></thead><tbody>
@@ -512,25 +512,36 @@
         
         const generatePdf = async () => {
             const printableArea = document.getElementById('printableArea');
+            if (!printableArea) return;
+            printableArea.scrollTop = 0; // Garante que a captura comece do topo
             const clientName = printableArea.querySelector('h2').textContent.split('-').pop().trim();
             try {
-                const canvas = await html2canvas(printableArea, { scale: 2, useCORS: true });
+                const canvas = await html2canvas(printableArea, { 
+                    scale: 2, 
+                    useCORS: true,
+                    scrollY: -window.scrollY // Corrige o problema de captura
+                });
                 const imgData = canvas.toDataURL('image/png');
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
                 const pdfWidth = pdf.internal.pageSize.getWidth();
-                const ratio = canvas.height / canvas.width;
-                let pdfHeight = (pdfWidth - 20) * ratio;
-                let heightLeft = pdfHeight;
-                let position = 10;
-                pdf.addImage(imgData, 'PNG', 10, position, pdfWidth - 20, pdfHeight);
-                heightLeft -= (pdf.internal.pageSize.getHeight() - 20);
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const imgWidth = canvas.width;
+                const imgHeight = canvas.height;
+                const ratio = imgHeight / imgWidth;
+                
+                const widthInPdf = pdfWidth - 20; // Margens de 10mm de cada lado
+                const heightInPdf = widthInPdf * ratio;
+
+                let position = 0;
+                pdf.addImage(imgData, 'PNG', 10, 10, widthInPdf, heightInPdf);
+                let heightLeft = heightInPdf - (pdfHeight - 20);
 
                 while (heightLeft > 0) {
-                    position = heightLeft - pdfHeight + 10;
+                    position -= (pdfHeight - 20);
                     pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', 10, position, pdfWidth - 20, pdfHeight);
-                    heightLeft -= (pdf.internal.pageSize.getHeight() - 20);
+                    pdf.addImage(imgData, 'PNG', 10, position, widthInPdf, heightInPdf);
+                    heightLeft -= (pdfHeight - 20);
                 }
                 pdf.save(`Pedido_${clientName.replace(/\s/g, '_')}.pdf`);
             } catch (error) { console.error("Erro ao gerar PDF:", error); alert("Não foi possível gerar o PDF."); }
