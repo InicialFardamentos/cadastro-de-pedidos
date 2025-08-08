@@ -31,7 +31,7 @@
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos</h1>
-                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos 1.4.</p>
+                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos 1.5.</p>
             </div>
             <button id="addOrderBtn" class="mt-4 sm:mt-0 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -513,13 +513,13 @@
         const generatePdf = async () => {
             const printableArea = document.getElementById('printableArea');
             if (!printableArea) return;
-            printableArea.scrollTop = 0; // Garante que a captura comece do topo
+            printableArea.scrollTop = 0;
             const clientName = printableArea.querySelector('h2').textContent.split('-').pop().trim();
             try {
                 const canvas = await html2canvas(printableArea, { 
                     scale: 2, 
                     useCORS: true,
-                    scrollY: -window.scrollY // Corrige o problema de captura
+                    scrollY: -window.scrollY
                 });
                 const imgData = canvas.toDataURL('image/png');
                 const { jsPDF } = window.jspdf;
@@ -530,7 +530,7 @@
                 const imgHeight = canvas.height;
                 const ratio = imgHeight / imgWidth;
                 
-                const widthInPdf = pdfWidth - 20; // Margens de 10mm de cada lado
+                const widthInPdf = pdfWidth - 20;
                 const heightInPdf = widthInPdf * ratio;
 
                 let position = 0;
@@ -547,32 +547,59 @@
             } catch (error) { console.error("Erro ao gerar PDF:", error); alert("Não foi possível gerar o PDF."); }
         };
 
+        const getDateStatusColor = (dateString) => {
+            if (!dateString) return 'text-gray-500';
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const deliveryDate = new Date(dateString.replace(/-/g, '\/'));
+            deliveryDate.setHours(0, 0, 0, 0);
+            
+            const diffTime = deliveryDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) return 'text-red-600 font-bold'; // Atrasado
+            if (diffDays === 0) return 'text-red-500 font-semibold'; // Hoje
+            if (diffDays <= 7) return 'text-orange-500'; // Próximos 7 dias
+            return 'text-green-600'; // Mais de 7 dias
+        };
+
         const loadOrders = () => {
             DOM.loadingIndicator.style.display = 'block';
             const q = query(dbCollection);
             onSnapshot(q, (snapshot) => {
                 DOM.ordersList.innerHTML = '';
                 allOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                if (snapshot.empty) {
+
+                // Ordenar por data de entrega
+                allOrders.sort((a, b) => {
+                    const dateA = a.deliveryDate ? new Date(a.deliveryDate) : new Date('9999-12-31');
+                    const dateB = b.deliveryDate ? new Date(b.deliveryDate) : new Date('9999-12-31');
+                    return dateA - dateB;
+                });
+
+                if (allOrders.length === 0) {
                     DOM.ordersList.innerHTML = `<div class="text-center col-span-full">Nenhum pedido encontrado. Adicione um novo!</div>`;
                 } else {
                     allOrders.forEach(order => {
                         const card = document.createElement('div');
                         card.className = 'bg-white rounded-lg shadow p-5 flex flex-col justify-between';
                         const totalQty = (order.parts || []).reduce((sum, p) => sum + (p.quantity || 0), 0);
+                        const deliveryDateFormatted = order.deliveryDate ? new Date(order.deliveryDate.replace(/-/g, '\/')).toLocaleDateString() : 'Sem data';
+                        const dateColorClass = getDateStatusColor(order.deliveryDate);
+
                         card.innerHTML = `
                             <div>
                                 <div class="flex justify-between items-start">
                                     <h3 class="font-bold text-lg text-gray-800">${order.clientName}</h3>
                                     <span class="text-sm font-medium py-1 px-3 rounded-full">${order.orderStatus}</span>
                                 </div>
-                                <p class="text-gray-600 text-sm mt-1">Pedido: ${order.orderDate ? new Date(order.orderDate.replace(/-/g, '\/')).toLocaleDateString() : 'N/A'}</p>
+                                <p class="text-gray-600 text-sm mt-2">Entrega: <span class="${dateColorClass}">${deliveryDateFormatted}</span></p>
                                 <p class="text-gray-600 text-sm">${totalQty} Itens</p>
                             </div>
                             <div class="flex justify-end space-x-2 mt-4">
-                                <button class="view-btn text-blue-600 hover:text-blue-800" data-id="${order.id}">Visualizar</button>
-                                <button class="edit-btn text-yellow-600 hover:text-yellow-800" data-id="${order.id}">Editar</button>
-                                <button class="delete-btn text-red-600 hover:text-red-800" data-id="${order.id}">Excluir</button>
+                                <button class="view-btn text-blue-600 hover:text-blue-800 text-sm" data-id="${order.id}">Visualizar</button>
+                                <button class="edit-btn text-yellow-600 hover:text-yellow-800 text-sm" data-id="${order.id}">Editar</button>
+                                <button class="delete-btn text-red-600 hover:text-red-800 text-sm" data-id="${order.id}">Excluir</button>
                             </div>`;
                         DOM.ordersList.appendChild(card);
                     });
