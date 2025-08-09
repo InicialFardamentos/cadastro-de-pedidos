@@ -11,6 +11,30 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
+    <!--
+        INFORMAÇÃO IMPORTANTE: REGRAS DE SEGURANÇA DO FIRESTORE
+
+        Para que o aplicativo funcione corretamente, você deve adicionar as seguintes regras de segurança no seu
+        painel do Firebase Firestore. Sem essas regras, o app não terá permissão para ler e escrever
+        dados no banco, o que causa o erro "Erro na inicialização do app".
+
+        1. Vá para o painel do Firebase -> Firestore Database -> Rules.
+        2. Substitua o conteúdo existente pelas regras abaixo:
+        
+        rules_version = '2';
+        service cloud.firestore {
+          match /databases/{database}/documents {
+            match /artifacts/{appId}/users/{userId}/{document=**} {
+              allow read, create, update, delete: if request.auth != null && request.auth.uid == userId;
+            }
+          }
+        }
+
+        3. Clique em "Publish".
+
+        Isso permitirá que cada usuário autenticado leia e escreva apenas seus próprios dados.
+    -->
+    
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         .modal-enter { animation: fadeIn 0.3s ease-out; }
@@ -32,7 +56,7 @@
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos</h1>
-                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos 1.8.</p>
+                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos 1.9.</p>
             </div>
             <button id="addOrderBtn" class="mt-4 sm:mt-0 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -52,7 +76,6 @@
 
                 <fieldset class="border p-4 rounded-lg">
                     <legend class="text-lg font-semibold px-2">1. Dados do Cliente e Datas</legend>
-                    <!-- Ajuste de responsividade: grid se torna 1 coluna em telas pequenas -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
                         <input type="text" id="clientName" placeholder="Nome do Cliente" class="p-2 border rounded-md w-full md:col-span-2 lg:col-span-2" required>
                         <input type="text" id="clientPhone" placeholder="Telefone" class="p-2 border rounded-md w-full">
@@ -91,7 +114,6 @@
                 <fieldset class="border p-4 rounded-lg">
                     <legend class="text-lg font-semibold px-2">6. Financeiro</legend>
                     <div id="financialsContainer" class="space-y-4 mb-4"></div>
-                    <!-- Ajuste de responsividade: se torna 1 coluna em telas pequenas -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 border-t pt-4">
                         <input type="number" step="0.01" id="downPayment" placeholder="Adiantamento (R$)" class="p-2 border rounded-md w-full">
                         <input type="text" id="paymentMethod" placeholder="Forma de Pagamento" class="p-2 border rounded-md w-full">
@@ -117,7 +139,6 @@
 
     <template id="partTemplate">
         <div class="part-item border p-3 rounded-md bg-gray-50 relative">
-            <!-- Ajuste de responsividade: colunas se adaptam em telas pequenas -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-2">
                 <input type="text" placeholder="Tipo (ex: Gola Redonda Manga Curta)" class="p-2 border rounded-md w-full md:col-span-2 lg:col-span-2 part-type">
                 <input type="text" placeholder="Material (ex: Dry-Fit)" class="p-2 border rounded-md w-full part-material">
@@ -129,7 +150,6 @@
     </template>
 
     <template id="financialRowTemplate">
-        <!-- Ajuste de responsividade: se adapta em telas pequenas -->
         <div class="financial-item grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
             <p class="font-semibold financial-part-name col-span-2 md:col-span-1">Peça 1</p>
             <input type="number" placeholder="Quantidade" class="p-2 border rounded-md w-full financial-quantity">
@@ -140,7 +160,6 @@
 
     <template id="detalhadoOrderTemplate">
         <div class="space-y-2">
-            <!-- Ajuste de responsividade: grid em telas pequenas -->
             <div class="grid grid-cols-2 sm:grid-cols-12 gap-2 font-semibold text-sm px-1">
                 <div class="hidden sm:block sm:col-span-3">Tipo de Peça</div>
                 <div class="hidden sm:block sm:col-span-2">Tamanho</div>
@@ -198,6 +217,11 @@
         let currentOrderType = 'comum';
         let partCounter = 0;
 
+        /**
+         * Converte um arquivo em uma string Base64.
+         * @param {File} file - O arquivo a ser convertido.
+         * @returns {Promise<string>} - A string Base64 do arquivo.
+         */
         const fileToBase64 = (file) => new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -205,6 +229,11 @@
             reader.onerror = error => reject(error);
         });
 
+        /**
+         * Faz o upload de uma imagem em Base64 para o ImgBB.
+         * @param {string} base64Image - A string Base64 da imagem.
+         * @returns {Promise<string|null>} - A URL da imagem carregada ou null em caso de erro.
+         */
         const uploadToImgBB = async (base64Image) => {
             const formData = new FormData();
             formData.append('image', base64Image);
@@ -215,11 +244,13 @@
                 throw new Error(data.error.message);
             } catch (error) {
                 console.error('Erro no upload para ImgBB:', error);
-                // Não use alert()
                 return null;
             }
         };
 
+        /**
+         * Atualiza os cálculos financeiros na modal do pedido.
+         */
         const updateFinancials = () => {
             let grandTotal = 0;
             DOM.financialsContainer.querySelectorAll('.financial-item').forEach(item => {
@@ -234,6 +265,10 @@
             DOM.remainingTotal.textContent = `R$ ${(grandTotal - downPayment).toFixed(2)}`;
         };
 
+        /**
+         * Adiciona uma nova peça e seus campos financeiros ao formulário.
+         * @param {object} partData - Dados da peça para preencher o formulário (opcional).
+         */
         const addPart = (partData = {}) => {
             partCounter++;
             const partTpl = document.getElementById('partTemplate').content.cloneNode(true);
@@ -264,6 +299,10 @@
             });
         };
         
+        /**
+         * Renderiza a visualização de pedido comum (por quantidade).
+         * @param {object} itemsData - Dados dos itens para preencher os campos (opcional).
+         */
         const renderComumView = (itemsData = {}) => {
             const categories = { 'Baby Look': ['PP', 'P', 'M', 'G', 'GG', 'XG'], 'Normal': ['PP', 'P', 'M', 'G', 'GG', 'XG'], 'Infantil': ['2 anos', '4 anos', '6 anos', '8 anos', '10 anos', '12 anos'] };
             let html = '<div class="space-y-4">';
@@ -284,12 +323,15 @@
             DOM.itemsContent.innerHTML = html;
         };
 
+        /**
+         * Renderiza a visualização de pedido detalhado (por nome).
+         * @param {array} itemsData - Array de objetos com os dados dos itens (opcional).
+         */
         const renderDetalhadoView = (itemsData = []) => {
             const template = document.getElementById('detalhadoOrderTemplate').content.cloneNode(true);
             const listContainer = template.querySelector('.detailed-items-list');
             const addRow = (item = {}) => {
                 const row = document.createElement('div');
-                // Ajuste de responsividade: grid se torna 1 coluna em telas pequenas
                 row.className = 'grid grid-cols-2 sm:grid-cols-12 gap-2 items-center detailed-item-row';
                 row.innerHTML = `<div class="col-span-2 sm:col-span-3"><input type="text" placeholder="Tipo Peça" class="p-1 border rounded-md w-full text-sm item-det-type" value="${item.type || ''}"></div><div class="col-span-1 sm:col-span-2"><input type="text" placeholder="Tamanho" class="p-1 border rounded-md w-full text-sm item-det-size" value="${item.size || ''}"></div><div class="col-span-2 sm:col-span-4"><input type="text" placeholder="Nome na camisa" class="p-1 border rounded-md w-full text-sm item-det-name" value="${item.name || ''}"></div><div class="col-span-1 sm:col-span-2"><input type="text" placeholder="Número" class="p-1 border rounded-md w-full text-sm item-det-number" value="${item.number || ''}"></div><div class="col-span-1 flex justify-center"><button type="button" class="text-red-500 remove-detailed-row">&times;</button></div>`;
                 row.querySelector('.remove-detailed-row').addEventListener('click', () => row.remove());
@@ -301,6 +343,9 @@
             if (itemsData.length) itemsData.forEach(addRow); else addRow();
         };
 
+        /**
+         * Reseta todos os campos do formulário para o estado inicial.
+         */
         const resetForm = () => {
             partCounter = 0;
             DOM.orderForm.reset();
@@ -318,6 +363,10 @@
             updateFinancials();
         };
 
+        /**
+         * Coleta todos os dados do formulário e os retorna como um objeto.
+         * @returns {object} - Objeto contendo os dados do pedido.
+         */
         const collectFormData = () => {
             const orderData = {
                 clientName: document.getElementById('clientName').value || '',
@@ -370,6 +419,10 @@
             return orderData;
         }
 
+        /**
+         * Salva um novo pedido ou atualiza um existente no Firestore.
+         * @param {Event} e - O evento de submit do formulário.
+         */
         const saveOrder = async (e) => {
             e.preventDefault();
             DOM.saveBtn.disabled = true;
@@ -395,13 +448,16 @@
                 DOM.orderModal.classList.add('hidden');
             } catch (error) {
                 console.error("Erro detalhado ao salvar:", error);
-                // Não use alert()
             } finally {
                 DOM.saveBtn.disabled = false;
                 DOM.uploadIndicator.classList.add('hidden');
             }
         };
 
+        /**
+         * Preenche a modal de edição com os dados de um pedido existente.
+         * @param {string} orderId - O ID do pedido a ser editado.
+         */
         const editOrder = (orderId) => {
             const orderData = allOrders.find(o => o.id === orderId);
             if (!orderData) return;
@@ -449,8 +505,11 @@
             DOM.orderModal.classList.remove('hidden');
         };
 
+        /**
+         * Exibe um modal de confirmação para excluir um pedido.
+         * @param {string} id - O ID do pedido a ser excluído.
+         */
         const deleteOrder = async (id) => {
-            // Usar modal customizado em vez de `confirm()`
             const customConfirm = (message, onConfirm, onCancel) => {
                 const modal = document.createElement('div');
                 modal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50';
@@ -479,12 +538,15 @@
                 try {
                     await deleteDoc(doc(dbCollection, id));
                 } catch(error) {
-                    // Tratar erro sem usar alert
                     console.error('Erro ao excluir pedido:', error);
                 }
             });
         };
 
+        /**
+         * Exibe a modal de visualização de um pedido com todos os seus detalhes.
+         * @param {string} orderId - O ID do pedido a ser visualizado.
+         */
         const viewOrder = (orderId) => {
             const order = allOrders.find(o => o.id === orderId);
             if (!order) return;
@@ -509,16 +571,14 @@
                             </div>`;
                 }).join('');
             } else {
-                itemsHtml = `<!-- Ajuste de responsividade para a tabela de itens detalhados -->
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-left text-sm mt-2"><thead><tr class="bg-gray-100"><th class="px-2 py-1">Tipo</th><th class="px-2 py-1">Tamanho</th><th class="px-2 py-1">Nome</th><th class="px-2 py-1">Número</th></tr></thead><tbody>                ${(order.items || []).map(i => `<tr><td class="border px-2 py-1">${i.type}</td><td class="border px-2 py-1">${i.size}</td><td class="border px-2 py-1">${i.name}</td><td class="border px-2 py-1">${i.number}</td></tr>`).join('')}
-                                </tbody></table>
-                            </div>`;            }
+                itemsHtml = `<div class="overflow-x-auto">
+                                <table class="w-full text-left text-sm mt-2"><thead><tr class="bg-gray-100"><th class="px-2 py-1">Tipo</th><th class="px-2 py-1">Tamanho</th><th class="px-2 py-1">Nome</th><th class="px-2 py-1">Número</th></tr></thead><tbody>${(order.items || []).map(i => `<tr><td class="border px-2 py-1">${i.type}</td><td class="border px-2 py-1">${i.size}</td><td class="border px-2 py-1">${i.name}</td><td class="border px-2 py-1">${i.number}</td></tr>`).join('')}</tbody></table>
+                            </div>`;            
+            }
             
             const modalContent = `<div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col">
                     <div id="printableArea" class="p-8 overflow-y-auto printable-area">
                         <h2 class="text-2xl font-bold mb-4">Detalhes do Pedido - ${order.clientName}</h2>
-                        <!-- Ajuste de responsividade: grid se torna 1 coluna em telas pequenas -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 mb-4 text-sm">
                             <div><strong>Cliente:</strong> ${order.clientName}</div>
                             <div><strong>Telefone:</strong> ${order.clientPhone || 'N/A'}</div>
@@ -527,7 +587,6 @@
                             <div><strong>Status:</strong> ${order.orderStatus}</div>
                         </div>
                         <h3 class="font-bold text-lg mt-4">Descrição das Peças</h3>
-                        <!-- Ajuste de responsividade: tabelas com scroll horizontal em telas pequenas -->
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-sm mt-2"><thead><tr class="bg-gray-100"><th class="px-2 py-1">Tipo</th><th class="px-2 py-1">Material</th><th class="px-2 py-1">Cor Malha</th><th class="px-2 py-1">Cor Detalhes</th><th class="px-2 py-1 text-center">Qtd</th><th class="px-2 py-1 text-right">V. Un.</th><th class="px-2 py-1 text-right">Subtotal</th></tr></thead><tbody>${partsHtml}</tbody></table>
                         </div>
@@ -536,7 +595,6 @@
                         <h3 class="font-bold text-lg mt-4">Observação Geral</h3>
                         <p class="text-sm border p-2 rounded-md bg-gray-50 mt-2">${order.generalObservation || 'Nenhuma.'}</p>
                         <h3 class="font-bold text-lg mt-4">Financeiro</h3>
-                        <!-- Ajuste de responsividade: grid se torna 1 coluna em telas pequenas -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mt-2 p-3 bg-gray-100 rounded-lg">
                             <div><strong>Valor Total:</strong> <span class="font-bold">R$ ${totalValue.toFixed(2)}</span></div>
                             <div><strong>Adiantamento:</strong> R$ ${(order.downPayment || 0).toFixed(2)}</div>
@@ -550,10 +608,14 @@
                          <button id="closeViewBtn" class="bg-gray-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-gray-600 w-full sm:w-auto">Fechar</button>
                          <button id="printPdfBtn" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700 w-full sm:w-auto">Gerar PDF</button>
                     </div>
-                </div>`;            DOM.viewModal.innerHTML = modalContent;
+                </div>`;            
+            DOM.viewModal.innerHTML = modalContent;
             DOM.viewModal.classList.remove('hidden');
         };
         
+        /**
+         * Gera um PDF a partir da área de impressão.
+         */
         const generatePdf = async () => {
             const printableArea = document.getElementById('printableArea');
             if (!printableArea) return;
@@ -588,9 +650,14 @@
                     heightLeft -= (pdfHeight - 20);
                 }
                 pdf.save(`Pedido_${clientName.replace(/\s/g, '_')}.pdf`);
-            } catch (error) { console.error("Erro ao gerar PDF:", error); /* não use alert */ }
+            } catch (error) { console.error("Erro ao gerar PDF:", error); }
         };
 
+        /**
+         * Retorna a classe CSS da cor do texto com base na data de entrega.
+         * @param {string} dateString - A data de entrega no formato 'YYYY-MM-DD'.
+         * @returns {string} - A classe CSS.
+         */
         const getDateStatusColor = (dateString) => {
             if (!dateString) return 'text-gray-500';
             const today = new Date();
@@ -601,12 +668,16 @@
             const diffTime = deliveryDate - today;
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-            if (diffDays < 0) return 'text-red-600 font-bold'; // Atrasado
-            if (diffDays === 0) return 'text-red-500 font-semibold'; // Hoje
-            if (diffDays <= 7) return 'text-orange-500'; // Próximos 7 dias
-            return 'text-green-600'; // Mais de 7 dias
+            if (diffDays < 0) return 'text-red-600 font-bold';
+            if (diffDays === 0) return 'text-red-500 font-semibold';
+            if (diffDays <= 7) return 'text-orange-500';
+            return 'text-green-600';
         };
 
+        /**
+         * Carrega os pedidos do Firestore e os renderiza na tela.
+         * @returns {Function} - A função de desinscrição do listener do Firestore.
+         */
         const loadOrders = () => {
             if (!dbCollection) {
                 console.error("A coleção do Firestore não foi inicializada.");
@@ -660,6 +731,9 @@
             return unsubscribe;
         };
         
+        /**
+         * Configura todos os event listeners da aplicação.
+         */
         function setupEventListeners() {
             document.body.addEventListener('click', (e) => {
                 if (e.target.closest('.view-btn')) viewOrder(e.target.closest('.view-btn').dataset.id);
@@ -699,37 +773,43 @@
         document.addEventListener('DOMContentLoaded', async () => {
             let unsubscribeFromOrders = null;
             try {
-                // Inicializa o Firebase
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
-                setupEventListeners();
+                
+                // Primeiro, autenticar o usuário
+                await (async () => {
+                    if (initialAuthToken) {
+                        try {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } catch (e) {
+                            console.warn("Erro ao tentar autenticar com token customizado, caindo para anônimo. Isso pode ser esperado em alguns ambientes.");
+                            await signInAnonymously(auth);
+                        }
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                })();
 
+                // Em seguida, configurar o listener de autenticação
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
                         dbCollection = collection(db, `artifacts/${appId}/users/${userId}/orders`);
                         if (unsubscribeFromOrders) {
-                            unsubscribeFromOrders(); // Desinscrever do listener antigo, se houver
+                            unsubscribeFromOrders();
                         }
                         unsubscribeFromOrders = loadOrders();
+                        setupEventListeners();
                     } else {
-                        try { 
-                            if (initialAuthToken) {
-                                await signInWithCustomToken(auth, initialAuthToken);
-                            } else {
-                                await signInAnonymously(auth);
-                            }
-                        } catch (error) {
-                            console.error("Erro na autenticação:", error);
-                            DOM.loadingIndicator.textContent = 'Erro de autenticação. Por favor, recarregue a página.';
-                            DOM.loadingIndicator.classList.add('text-red-500', 'font-semibold');
-                        }
+                        console.error("Usuário não autenticado. Acesso ao Firestore não autorizado.");
+                        DOM.loadingIndicator.textContent = 'Acesso negado. Por favor, recarregue a página.';
+                        DOM.loadingIndicator.classList.add('text-red-500', 'font-semibold');
                     }
                 });
             } catch (error) {
-                console.error("Erro na inicialização do Firebase:", error);
-                DOM.loadingIndicator.textContent = 'Erro na inicialização do app. Verifique a configuração.';
+                console.error("Erro na inicialização do Firebase ou na autenticação:", error);
+                DOM.loadingIndicator.textContent = 'Erro na inicialização do app. Verifique a configuração e as regras de segurança.';
                 DOM.loadingIndicator.classList.add('text-red-500', 'font-semibold');
             }
         });
