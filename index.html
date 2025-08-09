@@ -19,7 +19,7 @@
         img.mockup-image:not([src]), img.mockup-image[src=""] { display: none; }
         img.mockup-image:error { content: url('https://placehold.co/400x400/e2e8f0/94a3b8?text=Arte+Indispon%C3%ADvel'); }
         input[type="file"]::file-selector-button { @apply bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition duration-300 border-none mr-4 cursor-pointer; }
-        .size-input-container { @apply flex flex-col items-center w-24; } /* New class for the form bug fix */
+        .size-input-container { @apply flex flex-col items-center w-24; }
         .size-input { @apply p-2 border rounded-md w-full text-center; }
         .tab-button { @apply px-4 py-2 text-sm font-semibold rounded-t-lg border-b-2 transition-colors duration-300 cursor-pointer; }
         .tab-button.active { @apply border-blue-600 text-blue-600; }
@@ -32,7 +32,7 @@
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos</h1>
-                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos 1.7.</p>
+                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos 1.8.</p>
             </div>
             <button id="addOrderBtn" class="mt-4 sm:mt-0 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -616,7 +616,7 @@
 
             DOM.loadingIndicator.style.display = 'block';
             const q = query(dbCollection);
-            onSnapshot(q, (snapshot) => {
+            const unsubscribe = onSnapshot(q, (snapshot) => {
                 DOM.ordersList.innerHTML = '';
                 allOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
@@ -657,6 +657,7 @@
                 console.error("Erro ao carregar:", error);
                 DOM.loadingIndicator.textContent = 'Erro ao carregar os pedidos.';
             });
+            return unsubscribe;
         };
         
         function setupEventListeners() {
@@ -695,35 +696,42 @@
             DOM.orderForm.addEventListener('submit', saveOrder);
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            // Inicializa o Firebase
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            setupEventListeners();
+        document.addEventListener('DOMContentLoaded', async () => {
+            let unsubscribeFromOrders = null;
+            try {
+                // Inicializa o Firebase
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setupEventListeners();
 
-            // Lógica de autenticação com o token customizado
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    // Usuário já autenticado ou autenticação bem-sucedida
-                    userId = user.uid;
-                    // Usa o ID da aplicação do ambiente e o ID do usuário para o caminho da coleção
-                    dbCollection = collection(db, `artifacts/${appId}/users/${userId}/orders`);
-                    loadOrders();
-                } else {
-                    // Tenta autenticar com o token customizado ou anonimamente
-                    try { 
-                        if (initialAuthToken) {
-                            await signInWithCustomToken(auth, initialAuthToken);
-                        } else {
-                            await signInAnonymously(auth);
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        dbCollection = collection(db, `artifacts/${appId}/users/${userId}/orders`);
+                        if (unsubscribeFromOrders) {
+                            unsubscribeFromOrders(); // Desinscrever do listener antigo, se houver
                         }
-                    } catch (error) {
-                        console.error("Erro na autenticação:", error);
-                        DOM.loadingIndicator.textContent = 'Erro de autenticação.';
+                        unsubscribeFromOrders = loadOrders();
+                    } else {
+                        try { 
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(auth, initialAuthToken);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        } catch (error) {
+                            console.error("Erro na autenticação:", error);
+                            DOM.loadingIndicator.textContent = 'Erro de autenticação. Por favor, recarregue a página.';
+                            DOM.loadingIndicator.classList.add('text-red-500', 'font-semibold');
+                        }
                     }
-                }
-            });
+                });
+            } catch (error) {
+                console.error("Erro na inicialização do Firebase:", error);
+                DOM.loadingIndicator.textContent = 'Erro na inicialização do app. Verifique a configuração.';
+                DOM.loadingIndicator.classList.add('text-red-500', 'font-semibold');
+            }
         });
     </script>
 </body>
