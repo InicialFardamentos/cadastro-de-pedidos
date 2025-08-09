@@ -32,7 +32,7 @@
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos</h1>
-                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos 1.6.</p>
+                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos 1.7.</p>
             </div>
             <button id="addOrderBtn" class="mt-4 sm:mt-0 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -157,21 +157,18 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, getDoc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         const IMGBB_API_KEY = "99f3a6d84b391aad3ca5b787b5ee3783"; 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCy3LxIJ_cY1R-t7qPJPzSYBUyvpGV9zXw",
-            authDomain: "meus-pedidos-app-521d6.firebaseapp.com",
-            projectId: "meus-pedidos-app-521d6",
-            storageBucket: "meus-pedidos-app-521d6.appspot.com",
-            messagingSenderId: "782022322907",
-            appId: "1:782022322907:web:c36fa6f6ed321dce313afe"
-        };
         
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+        // As configurações do Firebase e o token de autenticação são fornecidos pelo ambiente
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        let app;
+        let db;
+        let auth;
         let userId = null;
         let dbCollection;
         let allOrders = [];
@@ -218,7 +215,7 @@
                 throw new Error(data.error.message);
             } catch (error) {
                 console.error('Erro no upload para ImgBB:', error);
-                alert(`Ocorreu um erro ao enviar a imagem: ${error.message}`);
+                // Não use alert()
                 return null;
             }
         };
@@ -398,7 +395,7 @@
                 DOM.orderModal.classList.add('hidden');
             } catch (error) {
                 console.error("Erro detalhado ao salvar:", error);
-                alert("Ocorreu um erro ao salvar o pedido. Verifique o console para mais detalhes.");
+                // Não use alert()
             } finally {
                 DOM.saveBtn.disabled = false;
                 DOM.uploadIndicator.classList.add('hidden');
@@ -453,14 +450,39 @@
         };
 
         const deleteOrder = async (id) => {
-            if (confirm('Tem certeza que deseja excluir este pedido?')) {
+            // Usar modal customizado em vez de `confirm()`
+            const customConfirm = (message, onConfirm, onCancel) => {
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50';
+                modal.innerHTML = `
+                    <div class="bg-white rounded-xl p-6 shadow-2xl max-w-sm w-full">
+                        <p class="text-lg font-semibold mb-4">${message}</p>
+                        <div class="flex justify-end space-x-2">
+                            <button class="bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300" id="cancelDelete">Cancelar</button>
+                            <button class="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700" id="confirmDelete">Excluir</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                document.getElementById('cancelDelete').addEventListener('click', () => {
+                    modal.remove();
+                    if (onCancel) onCancel();
+                });
+                document.getElementById('confirmDelete').addEventListener('click', () => {
+                    modal.remove();
+                    if (onConfirm) onConfirm();
+                });
+            };
+
+            customConfirm('Tem certeza que deseja excluir este pedido?', async () => {
                 try {
                     await deleteDoc(doc(dbCollection, id));
                 } catch(error) {
-                    alert('Erro ao excluir pedido.');
-                    console.error(error);
+                    // Tratar erro sem usar alert
+                    console.error('Erro ao excluir pedido:', error);
                 }
-            }
+            });
         };
 
         const viewOrder = (orderId) => {
@@ -566,7 +588,7 @@
                     heightLeft -= (pdfHeight - 20);
                 }
                 pdf.save(`Pedido_${clientName.replace(/\s/g, '_')}.pdf`);
-            } catch (error) { console.error("Erro ao gerar PDF:", error); alert("Não foi possível gerar o PDF."); }
+            } catch (error) { console.error("Erro ao gerar PDF:", error); /* não use alert */ }
         };
 
         const getDateStatusColor = (dateString) => {
@@ -586,6 +608,12 @@
         };
 
         const loadOrders = () => {
+            if (!dbCollection) {
+                console.error("A coleção do Firestore não foi inicializada.");
+                DOM.loadingIndicator.textContent = 'Erro: Falha na inicialização do banco de dados.';
+                return;
+            }
+
             DOM.loadingIndicator.style.display = 'block';
             const q = query(dbCollection);
             onSnapshot(q, (snapshot) => {
@@ -659,6 +687,7 @@
             
             DOM.addOrderBtn.addEventListener('click', () => {
                 resetForm();
+                document.getElementById('modalTitle').textContent = 'Novo Pedido';
                 DOM.orderModal.classList.remove('hidden');
             });
 
@@ -667,15 +696,28 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Inicializa o Firebase
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
             setupEventListeners();
+
+            // Lógica de autenticação com o token customizado
             onAuthStateChanged(auth, async (user) => {
                 if (user) {
+                    // Usuário já autenticado ou autenticação bem-sucedida
                     userId = user.uid;
-                    dbCollection = collection(db, `users/${userId}/orders`);
+                    // Usa o ID da aplicação do ambiente e o ID do usuário para o caminho da coleção
+                    dbCollection = collection(db, `artifacts/${appId}/users/${userId}/orders`);
                     loadOrders();
                 } else {
+                    // Tenta autenticar com o token customizado ou anonimamente
                     try { 
-                        await signInAnonymously(auth); 
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
                     } catch (error) {
                         console.error("Erro na autenticação:", error);
                         DOM.loadingIndicator.textContent = 'Erro de autenticação.';
