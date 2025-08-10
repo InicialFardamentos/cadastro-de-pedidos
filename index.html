@@ -10,31 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-    <!--
-        INFORMAÇÃO IMPORTANTE: REGRAS DE SEGURANÇA DO FIRESTORE
-
-        Para que o aplicativo funcione corretamente, você deve adicionar as seguintes regras de segurança no seu
-        painel do Firebase Firestore. Sem essas regras, o app não terá permissão para ler e escrever
-        dados no banco, o que causa o erro "Erro na inicialização do app".
-
-        1. Vá para o painel do Firebase -> Firestore Database -> Rules.
-        2. Substitua o conteúdo existente pelas regras abaixo:
-
-        rules_version = '2';
-        service cloud.firestore {
-          match /databases/{database}/documents {
-            match /artifacts/{appId}/users/{userId}/{document=**} {
-              allow read, create, update, delete: if request.auth != null && request.auth.uid == userId;
-            }
-          }
-        }
-
-        3. Clique em "Publish".
-
-        Isso permitirá que cada usuário autenticado leia e escreva apenas seus próprios dados.
-    -->
-
+    
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         .modal-enter { animation: fadeIn 0.3s ease-out; }
@@ -43,7 +19,7 @@
         img.mockup-image:not([src]), img.mockup-image[src=""] { display: none; }
         img.mockup-image:error { content: url('https://placehold.co/400x400/e2e8f0/94a3b8?text=Arte+Indispon%C3%ADvel'); }
         input[type="file"]::file-selector-button { @apply bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition duration-300 border-none mr-4 cursor-pointer; }
-        .size-input-container { @apply flex flex-col items-center w-24; }
+        .size-input-container { @apply flex flex-col items-center; }
         .size-input { @apply p-2 border rounded-md w-full text-center; }
         .tab-button { @apply px-4 py-2 text-sm font-semibold rounded-t-lg border-b-2 transition-colors duration-300 cursor-pointer; }
         .tab-button.active { @apply border-blue-600 text-blue-600; }
@@ -62,7 +38,7 @@
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos</h1>
-                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos 1.2.</p>
+                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos 1.6.</p>
             </div>
             <button id="addOrderBtn" class="mt-4 sm:mt-0 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -102,7 +78,7 @@
                     <div id="partsContainer" class="space-y-4"></div>
                     <button type="button" id="addPartBtn" class="mt-4 bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">Adicionar Peça (ex: Camisa, Calça)</button>
                 </fieldset>
-
+                
                 <fieldset class="border p-4 rounded-lg">
                     <legend class="text-lg font-semibold px-2">4. Itens e Personalização</legend>
                     <div id="orderTypeSelector" class="flex space-x-2 mb-4">
@@ -134,7 +110,7 @@
                     </div>
                 </fieldset>
 
-                <div class="flex flex-col sm:flex-row justify-end items-center space-x-0 sm:space-x-4 mt-8 space-y-4 sm:space-y-0">
+                <div class="flex flex-col sm:flex-row justify-end items-center space-y-2 sm:space-y-0 sm:space-x-4 mt-8">
                     <div id="uploadIndicator" class="text-sm text-blue-600 font-semibold hidden">Salvando...</div>
                     <button type="button" id="cancelBtn" class="bg-gray-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-gray-600 w-full sm:w-auto">Cancelar</button>
                     <button type="submit" id="saveBtn" class="bg-green-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-green-700 w-full sm:w-auto">Salvar Pedido</button>
@@ -166,11 +142,11 @@
 
     <template id="detalhadoOrderTemplate">
         <div class="space-y-2">
-            <div class="grid grid-cols-2 sm:grid-cols-12 gap-2 font-semibold text-sm px-1">
-                <div class="hidden sm:block sm:col-span-3">Tipo de Peça</div>
-                <div class="hidden sm:block sm:col-span-2">Tamanho</div>
-                <div class="hidden sm:block sm:col-span-4">Nome na Camisa</div>
-                <div class="hidden sm:block sm:col-span-2">Número/Outro</div>
+            <div class="hidden sm:grid grid-cols-12 gap-2 font-semibold text-sm px-1">
+                <div class="col-span-3">Tipo de Peça</div>
+                <div class="col-span-2">Tamanho</div>
+                <div class="col-span-4">Nome na Camisa</div>
+                <div class="col-span-2">Número/Outro</div>
             </div>
             <div class="detailed-items-list space-y-2"></div>
             <button type="button" class="add-detailed-row-btn mt-2 bg-gray-200 text-gray-800 text-sm py-1 px-3 rounded-lg hover:bg-gray-300">+ Adicionar Linha</button>
@@ -179,31 +155,24 @@
 
     <div id="viewModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden"></div>
 
-    <!-- Modal de erro ou informação -->
-    <div id="infoModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full">
-            <p id="infoModalMessage" class="text-lg font-semibold text-center mb-4"></p>
-            <div class="flex justify-center">
-                <button id="infoModalCloseBtn" class="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700">OK</button>
-            </div>
-        </div>
-    </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, getDoc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        const IMGBB_API_KEY = "99f3a6d84b391aad3ca5b787b5ee3783";
-
-        // As configurações do Firebase e o token de autenticação são fornecidos pelo ambiente
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-        let app;
-        let db;
-        let auth;
+        const IMGBB_API_KEY = "99f3a6d84b391aad3ca5b787b5ee3783"; 
+        const firebaseConfig = {
+            apiKey: "AIzaSyCy3LxIJ_cY1R-t7qPJPzSYBUyvpGV9zXw",
+            authDomain: "meus-pedidos-app-521d6.firebaseapp.com",
+            projectId: "meus-pedidos-app-521d6",
+            storageBucket: "meus-pedidos-app-521d6.appspot.com",
+            messagingSenderId: "782022322907",
+            appId: "1:782022322907:web:c36fa6f6ed321dce313afe"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
         let userId = null;
         let dbCollection;
         let allOrders = [];
@@ -225,77 +194,14 @@
             saveBtn: document.getElementById('saveBtn'),
             uploadIndicator: document.getElementById('uploadIndicator'),
             viewModal: document.getElementById('viewModal'),
-            infoModal: document.getElementById('infoModal'),
-            infoModalMessage: document.getElementById('infoModalMessage'),
-            infoModalCloseBtn: document.getElementById('infoModalCloseBtn'),
             grandTotal: document.getElementById('grandTotal'),
             remainingTotal: document.getElementById('remainingTotal'),
             downPayment: document.getElementById('downPayment')
-        };
-        
-        /**
-         * Exibe um modal de informação/erro.
-         * @param {string} message - A mensagem a ser exibida.
-         */
-        const showInfoModal = (message) => {
-            DOM.infoModalMessage.textContent = message;
-            DOM.infoModal.classList.remove('hidden');
-        };
-
-        DOM.infoModalCloseBtn.addEventListener('click', () => {
-            DOM.infoModal.classList.add('hidden');
-        });
-
-        /**
-         * Inicializa o Firebase e a autenticação.
-         */
-        const initializeFirebase = async () => {
-            // Verifica se a configuração do Firebase é válida.
-            if (!firebaseConfig || !firebaseConfig.projectId) {
-                console.error("Erro na configuração do Firebase: projectId não fornecido.");
-                showInfoModal("Erro na inicialização do app. Certifique-se de que está a correr este código num ambiente que forneça a configuração do Firebase.");
-                DOM.loadingIndicator.textContent = "Erro na inicialização. Verifique o console para detalhes.";
-                return;
-            }
-
-            try {
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                // Espera a autenticação ser concluída para obter o userId
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        console.log("Usuário autenticado com sucesso. User ID:", userId);
-                        dbCollection = collection(db, `artifacts/${appId}/users/${userId}/orders`);
-                        setupFirestoreListener();
-                    } else {
-                        console.log("Nenhum usuário autenticado.");
-                        DOM.loadingIndicator.textContent = "Falha na autenticação do usuário.";
-                    }
-                });
-            } catch (error) {
-                console.error("Erro detalhado na inicialização do Firebase:", error);
-                showInfoModal("Erro na inicialização do app. Verifique o console para mais informações.");
-                DOM.loadingIndicator.textContent = "Erro de inicialização.";
-            }
         };
 
         let currentOrderType = 'comum';
         let partCounter = 0;
 
-        /**
-         * Converte um arquivo em uma string Base64.
-         * @param {File} file - O arquivo a ser convertido.
-         * @returns {Promise<string>} - A string Base64 do arquivo.
-         */
         const fileToBase64 = (file) => new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -303,11 +209,6 @@
             reader.onerror = error => reject(error);
         });
 
-        /**
-         * Faz o upload de uma imagem em Base64 para o ImgBB.
-         * @param {string} base64Image - A string Base64 da imagem.
-         * @returns {Promise<string|null>} - A URL da imagem carregada ou null em caso de erro.
-         */
         const uploadToImgBB = async (base64Image) => {
             const formData = new FormData();
             formData.append('image', base64Image);
@@ -318,13 +219,11 @@
                 throw new Error(data.error.message);
             } catch (error) {
                 console.error('Erro no upload para ImgBB:', error);
+                alert(`Ocorreu um erro ao enviar a imagem: ${error.message}`);
                 return null;
             }
         };
 
-        /**
-         * Atualiza os cálculos financeiros na modal do pedido.
-         */
         const updateFinancials = () => {
             let grandTotal = 0;
             DOM.financialsContainer.querySelectorAll('.financial-item').forEach(item => {
@@ -339,10 +238,6 @@
             DOM.remainingTotal.textContent = `R$ ${(grandTotal - downPayment).toFixed(2)}`;
         };
 
-        /**
-         * Adiciona uma nova peça e seus campos financeiros ao formulário.
-         * @param {object} partData - Dados da peça para preencher o formulário (opcional).
-         */
         const addPart = (partData = {}) => {
             partCounter++;
             const partTpl = document.getElementById('partTemplate').content.cloneNode(true);
@@ -364,7 +259,6 @@
 
             partItem.querySelector('.part-type').addEventListener('input', (e) => {
                 finItem.querySelector('.financial-part-name').textContent = e.target.value || `Peça ${partCounter}`;
-                updateFinancials();
             });
             partItem.querySelector('.remove-part-btn').addEventListener('click', () => {
                 partItem.remove();
@@ -372,24 +266,15 @@
                 updateFinancials();
             });
         };
-
-        /**
-         * Renderiza a visualização de pedido comum (por quantidade).
-         * @param {object} itemsData - Dados dos itens para preencher os campos (opcional).
-         */
+        
         const renderComumView = (itemsData = {}) => {
             const categories = { 'Baby Look': ['PP', 'P', 'M', 'G', 'GG', 'XG'], 'Normal': ['PP', 'P', 'M', 'G', 'GG', 'XG'], 'Infantil': ['2 anos', '4 anos', '6 anos', '8 anos', '10 anos', '12 anos'] };
             let html = '<div class="space-y-4">';
             for (const category in categories) {
-                html += `<div class="p-3 border rounded-md">
-                            <h4 class="font-semibold mb-2">${category}</h4>
-                            <div class="flex flex-wrap gap-4 justify-start">`;
+                html += `<div class="p-3 border rounded-md"><h4 class="font-semibold mb-2">${category}</h4><div class="grid grid-cols-3 md:grid-cols-6 gap-x-4 gap-y-2">`;
                 categories[category].forEach(size => {
                     const value = itemsData[category]?.[size] || '';
-                    html += `<div class="size-input-container">
-                                <label class="text-xs text-gray-600 block mb-1">${size}</label>
-                                <input type="number" min="0" class="size-input" data-category="${category}" data-size="${size}" value="${value}">
-                             </div>`;
+                    html += `<div class="text-center"><label class="text-xs text-gray-600 block mb-1">${size}</label><input type="number" min="0" class="size-input" data-category="${category}" data-size="${size}" value="${value}"></div>`;
                 });
                 html += `</div></div>`;
             }
@@ -397,17 +282,13 @@
             DOM.itemsContent.innerHTML = html;
         };
 
-        /**
-         * Renderiza a visualização de pedido detalhado (por nome).
-         * @param {array} itemsData - Array de objetos com os dados dos itens (opcional).
-         */
         const renderDetalhadoView = (itemsData = []) => {
             const template = document.getElementById('detalhadoOrderTemplate').content.cloneNode(true);
             const listContainer = template.querySelector('.detailed-items-list');
             const addRow = (item = {}) => {
                 const row = document.createElement('div');
-                row.className = 'grid grid-cols-2 sm:grid-cols-12 gap-2 items-center detailed-item-row';
-                row.innerHTML = `<div class="col-span-2 sm:col-span-3"><input type="text" placeholder="Tipo Peça" class="p-1 border rounded-md w-full text-sm item-det-type" value="${item.type || ''}"></div><div class="col-span-1 sm:col-span-2"><input type="text" placeholder="Tamanho" class="p-1 border rounded-md w-full text-sm item-det-size" value="${item.size || ''}"></div><div class="col-span-2 sm:col-span-4"><input type="text" placeholder="Nome na camisa" class="p-1 border rounded-md w-full text-sm item-det-name" value="${item.name || ''}"></div><div class="col-span-1 sm:col-span-2"><input type="text" placeholder="Número" class="p-1 border rounded-md w-full text-sm item-det-number" value="${item.number || ''}"></div><div class="col-span-1 flex justify-center"><button type="button" class="text-red-500 remove-detailed-row">&times;</button></div>`;
+                row.className = 'grid grid-cols-12 gap-2 items-center detailed-item-row';
+                row.innerHTML = `<div class="col-span-3"><input type="text" placeholder="Tipo Peça" class="p-1 border rounded-md w-full text-sm item-det-type" value="${item.type || ''}"></div><div class="col-span-2"><input type="text" placeholder="Tamanho" class="p-1 border rounded-md w-full text-sm item-det-size" value="${item.size || ''}"></div><div class="col-span-4"><input type="text" placeholder="Nome na camisa" class="p-1 border rounded-md w-full text-sm item-det-name" value="${item.name || ''}"></div><div class="col-span-2"><input type="text" placeholder="Número" class="p-1 border rounded-md w-full text-sm item-det-number" value="${item.number || ''}"></div><div class="col-span-1 flex justify-center"><button type="button" class="text-red-500 remove-detailed-row">&times;</button></div>`;
                 row.querySelector('.remove-detailed-row').addEventListener('click', () => row.remove());
                 listContainer.appendChild(row);
             };
@@ -417,9 +298,6 @@
             if (itemsData.length) itemsData.forEach(addRow); else addRow();
         };
 
-        /**
-         * Reseta todos os campos do formulário para o estado inicial.
-         */
         const resetForm = () => {
             partCounter = 0;
             DOM.orderForm.reset();
@@ -437,10 +315,6 @@
             updateFinancials();
         };
 
-        /**
-         * Coleta todos os dados do formulário e os retorna como um objeto.
-         * @returns {object} - Objeto contendo os dados do pedido.
-         */
         const collectFormData = () => {
             const orderData = {
                 clientName: document.getElementById('clientName').value || '',
@@ -460,16 +334,14 @@
             DOM.partsContainer.querySelectorAll('.part-item').forEach(p => {
                 const partId = p.dataset.partId;
                 const finItem = DOM.financialsContainer.querySelector(`.financial-item[data-part-id="${partId}"]`);
-                if (p.querySelector('.part-type')) { // Garante que o elemento existe
-                  orderData.parts.push({
-                      type: p.querySelector('.part-type').value || '',
-                      material: p.querySelector('.part-material').value || '',
-                      colorMain: p.querySelector('.part-color-main').value || '',
-                      colorDetails: p.querySelector('.part-color-details').value || '',
-                      quantity: parseFloat(finItem?.querySelector('.financial-quantity')?.value) || 0,
-                      unitPrice: parseFloat(finItem?.querySelector('.financial-price')?.value) || 0,
-                  });
-                }
+                orderData.parts.push({
+                    type: p.querySelector('.part-type').value || '',
+                    material: p.querySelector('.part-material').value || '',
+                    colorMain: p.querySelector('.part-color-main').value || '',
+                    colorDetails: p.querySelector('.part-color-details').value || '',
+                    quantity: parseFloat(finItem.querySelector('.financial-quantity').value) || 0,
+                    unitPrice: parseFloat(finItem.querySelector('.financial-price').value) || 0,
+                });
             });
 
             if (currentOrderType === 'comum') {
@@ -483,10 +355,10 @@
                 });
             } else {
                 DOM.itemsContent.querySelectorAll('.detailed-item-row').forEach(row => {
-                    const type = row.querySelector('.item-det-type')?.value;
-                    const size = row.querySelector('.item-det-size')?.value;
-                    const name = row.querySelector('.item-det-name')?.value;
-                    const number = row.querySelector('.item-det-number')?.value;
+                    const type = row.querySelector('.item-det-type').value;
+                    const size = row.querySelector('.item-det-size').value;
+                    const name = row.querySelector('.item-det-name').value;
+                    const number = row.querySelector('.item-det-number').value;
                     if (type || size || name || number) {
                         orderData.items.push({ type, size, name, number });
                     }
@@ -495,10 +367,6 @@
             return orderData;
         }
 
-        /**
-         * Salva um novo pedido ou atualiza um existente no Firestore.
-         * @param {Event} e - O evento de submit do formulário.
-         */
         const saveOrder = async (e) => {
             e.preventDefault();
             DOM.saveBtn.disabled = true;
@@ -506,39 +374,35 @@
 
             const files = document.getElementById('mockupFiles').files;
             const uploadPromises = Array.from(files).map(file => fileToBase64(file).then(uploadToImgBB));
-
+            
             try {
                 const newUrls = (await Promise.all(uploadPromises)).filter(Boolean);
                 const existingUrls = JSON.parse(document.getElementById('orderId').dataset.existingUrls || '[]');
-
+                
                 const orderData = collectFormData();
                 orderData.mockupUrls = [...existingUrls, ...newUrls];
-
+                
                 const id = document.getElementById('orderId').value;
                 if (id) {
                     await updateDoc(doc(dbCollection, id), orderData);
                 } else {
                     await addDoc(dbCollection, orderData);
                 }
-
+                
                 DOM.orderModal.classList.add('hidden');
             } catch (error) {
                 console.error("Erro detalhado ao salvar:", error);
-                showInfoModal("Erro ao salvar pedido. Verifique o console para mais detalhes.");
+                alert("Ocorreu um erro ao salvar o pedido. Verifique o console para mais detalhes.");
             } finally {
                 DOM.saveBtn.disabled = false;
                 DOM.uploadIndicator.classList.add('hidden');
             }
         };
 
-        /**
-         * Preenche a modal de edição com os dados de um pedido existente.
-         * @param {string} orderId - O ID do pedido a ser editado.
-         */
         const editOrder = (orderId) => {
             const orderData = allOrders.find(o => o.id === orderId);
             if (!orderData) return;
-
+            
             resetForm();
             document.getElementById('modalTitle').textContent = 'Editar Pedido';
             document.getElementById('orderId').value = orderId;
@@ -550,7 +414,7 @@
             document.getElementById('generalObservation').value = orderData.generalObservation;
             document.getElementById('downPayment').value = orderData.downPayment || '';
             document.getElementById('paymentMethod').value = orderData.paymentMethod || '';
-
+            
             document.getElementById('orderId').dataset.existingUrls = JSON.stringify(orderData.mockupUrls || []);
             const filesContainer = document.getElementById('existingFilesContainer');
             filesContainer.innerHTML = '<b>Arquivos existentes:</b><br>';
@@ -564,9 +428,9 @@
             if (orderData.parts && orderData.parts.length > 0) {
                 orderData.parts.forEach(addPart);
             } else {
-                addPart();
+                addPart(); 
             }
-
+            
             currentOrderType = orderData.orderType || 'comum';
             if (currentOrderType === 'comum') {
                 DOM.btnComum.classList.add('active');
@@ -577,53 +441,22 @@
                 DOM.btnComum.classList.remove('active');
                 renderDetalhadoView(orderData.items || []);
             }
-
+            
             updateFinancials();
             DOM.orderModal.classList.remove('hidden');
         };
 
-        /**
-         * Exibe um modal de confirmação para excluir um pedido.
-         * @param {string} id - O ID do pedido a ser excluído.
-         */
         const deleteOrder = async (id) => {
-            const customConfirm = (message, onConfirm) => {
-                const modal = document.createElement('div');
-                modal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50';
-                modal.innerHTML = `
-                    <div class="bg-white rounded-xl p-6 shadow-2xl max-w-sm w-full">
-                        <p class="text-lg font-semibold mb-4">${message}</p>
-                        <div class="flex justify-end space-x-2">
-                            <button class="bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300" id="cancelDelete">Cancelar</button>
-                            <button class="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700" id="confirmDelete">Excluir</button>
-                        </div>
-                    </div>
-                `;
-                document.body.appendChild(modal);
-
-                document.getElementById('cancelDelete').addEventListener('click', () => {
-                    modal.remove();
-                });
-                document.getElementById('confirmDelete').addEventListener('click', () => {
-                    modal.remove();
-                    if (onConfirm) onConfirm();
-                });
-            };
-
-            customConfirm('Tem certeza que deseja excluir este pedido?', async () => {
+            if (confirm('Tem certeza que deseja excluir este pedido?')) {
                 try {
                     await deleteDoc(doc(dbCollection, id));
                 } catch(error) {
-                    console.error('Erro ao excluir pedido:', error);
-                    showInfoModal("Erro ao excluir pedido. Verifique o console para mais detalhes.");
+                    alert('Erro ao excluir pedido.');
+                    console.error(error);
                 }
-            });
+            }
         };
 
-        /**
-         * Exibe a modal de visualização de um pedido com todos os seus detalhes.
-         * @param {string} orderId - O ID do pedido a ser visualizado.
-         */
         const viewOrder = (orderId) => {
             const order = allOrders.find(o => o.id === orderId);
             if (!order) return;
@@ -640,39 +473,33 @@
                 itemsHtml = Object.entries(order.items || {}).map(([category, sizes]) => {
                     const sizeEntries = Object.entries(sizes);
                     if (sizeEntries.length === 0) return '';
-                    return `<div class="mt-3 p-2 border rounded-md bg-gray-50">
-                                <h4 class="font-semibold mb-2">${category}</h4>
-                                <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 text-sm">
-                                    ${sizeEntries.map(([size, qty]) => `<span class="bg-gray-100 px-2 py-1 rounded">${size}: ${qty}</span>`).join('')}
-                                </div>
-                            </div>`;
+                    return `<div class="mt-3"><h4 class="font-semibold">${category}</h4><div class="flex flex-wrap gap-x-4 gap-y-2 text-sm">${sizeEntries.map(([size, qty]) => `<span class="bg-gray-100 px-2 py-1 rounded">${size}: ${qty}</span>`).join('')}</div></div>`
                 }).join('');
             } else {
-                itemsHtml = `<div class="overflow-x-auto">
-                                <table class="w-full text-left text-sm mt-2"><thead><tr class="bg-gray-100"><th class="px-2 py-1">Tipo</th><th class="px-2 py-1">Tamanho</th><th class="px-2 py-1">Nome</th><th class="px-2 py-1">Número</th></tr></thead><tbody>${(order.items || []).map(i => `<tr><td class="border px-2 py-1">${i.type}</td><td class="border px-2 py-1">${i.size}</td><td class="border px-2 py-1">${i.name}</td><td class="border px-2 py-1">${i.number}</td></tr>`).join('')}</tbody></table>
-                            </div>`;
+                itemsHtml = `<table class="w-full text-left text-sm mt-2"><thead><tr class="bg-gray-100"><th class="px-2 py-1">Tipo</th><th class="px-2 py-1">Tamanho</th><th class="px-2 py-1">Nome</th><th class="px-2 py-1">Número</th></tr></thead><tbody>
+                ${(order.items || []).map(i => `<tr><td class="border px-2 py-1">${i.type}</td><td class="border px-2 py-1">${i.size}</td><td class="border px-2 py-1">${i.name}</td><td class="border px-2 py-1">${i.number}</td></tr>`).join('')}
+                </tbody></table>`;
             }
 
-            const modalContent = `<div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col">
+            const modalContent = `
+                <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col">
                     <div id="printableArea" class="p-8 overflow-y-auto printable-area">
                         <h2 class="text-2xl font-bold mb-4">Detalhes do Pedido - ${order.clientName}</h2>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 mb-4 text-sm">
+                        <div class="grid grid-cols-2 gap-x-8 gap-y-2 mb-4 text-sm">
                             <div><strong>Cliente:</strong> ${order.clientName}</div>
                             <div><strong>Telefone:</strong> ${order.clientPhone || 'N/A'}</div>
                             <div><strong>Data do Pedido:</strong> ${order.orderDate ? new Date(order.orderDate.replace(/-/g, '\/')).toLocaleDateString() : 'N/A'}</div>
                             <div><strong>Data da Entrega:</strong> ${order.deliveryDate ? new Date(order.deliveryDate.replace(/-/g, '\/')).toLocaleDateString() : 'N/A'}</div>
-                            <div><strong>Status:</strong> <span class="status-badge status-${order.orderStatus.replace(/\s/g, '-')}}">${order.orderStatus}</span></div>
+                            <div><strong>Status:</strong> ${order.orderStatus}</div>
                         </div>
                         <h3 class="font-bold text-lg mt-4">Descrição das Peças</h3>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-sm mt-2"><thead><tr class="bg-gray-100"><th class="px-2 py-1">Tipo</th><th class="px-2 py-1">Material</th><th class="px-2 py-1">Cor Malha</th><th class="px-2 py-1">Cor Detalhes</th><th class="px-2 py-1 text-center">Qtd</th><th class="px-2 py-1 text-right">V. Un.</th><th class="px-2 py-1 text-right">Subtotal</th></tr></thead><tbody>${partsHtml}</tbody></table>
-                        </div>
-                        <h3 class="font-bold text-lg mt-4">Itens e Personalização (${order.orderType === 'comum' ? 'por Quantidade' : 'por Nome'})</h3>
-                        <div class="text-sm mt-2">${itemsHtml || 'Nenhum item especificado.'}</div>
+                        <table class="w-full text-left text-sm mt-2"><thead><tr class="bg-gray-100"><th class="px-2 py-1">Tipo</th><th class="px-2 py-1">Material</th><th class="px-2 py-1">Cor Malha</th><th class="px-2 py-1">Cor Detalhes</th><th class="px-2 py-1 text-center">Qtd</th><th class="px-2 py-1 text-right">V. Un.</th><th class="px-2 py-1 text-right">Subtotal</th></tr></thead><tbody>${partsHtml}</tbody></table>
+                        <h3 class="font-bold text-lg mt-4">Itens e Personalização (${order.orderType})</h3>
+                        <div class="text-sm p-2 border rounded-md mt-2 bg-gray-50">${itemsHtml || 'Nenhum item especificado.'}</div>
                         <h3 class="font-bold text-lg mt-4">Observação Geral</h3>
                         <p class="text-sm border p-2 rounded-md bg-gray-50 mt-2">${order.generalObservation || 'Nenhuma.'}</p>
                         <h3 class="font-bold text-lg mt-4">Financeiro</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mt-2 p-3 bg-gray-100 rounded-lg">
+                        <div class="grid grid-cols-2 gap-4 text-sm mt-2 p-3 bg-gray-100 rounded-lg">
                             <div><strong>Valor Total:</strong> <span class="font-bold">R$ ${totalValue.toFixed(2)}</span></div>
                             <div><strong>Adiantamento:</strong> R$ ${(order.downPayment || 0).toFixed(2)}</div>
                             <div><strong>Forma de Pagamento:</strong> ${order.paymentMethod || 'N/A'}</div>
@@ -681,26 +508,23 @@
                         <h3 class="font-bold text-lg mt-4">Arquivos</h3>
                         <div class="flex flex-wrap gap-4 mt-2">${(order.mockupUrls || []).map(url => `<a href="${url}" target="_blank"><img src="${url}" class="w-32 h-32 object-cover border rounded-md"></a>`).join('')}</div>
                     </div>
-                    <div class="p-4 bg-gray-100 border-t flex flex-col sm:flex-row justify-end space-x-0 sm:space-x-4 space-y-2 sm:space-y-0">
-                         <button id="closeViewBtn" class="bg-gray-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-gray-600 w-full sm:w-auto">Fechar</button>
-                         <button id="printPdfBtn" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700 w-full sm:w-auto">Gerar PDF</button>
+                    <div class="p-4 bg-gray-100 border-t flex justify-end space-x-4">
+                         <button id="closeViewBtn" class="bg-gray-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-gray-600">Fechar</button>
+                         <button id="printPdfBtn" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700">Gerar PDF</button>
                     </div>
                 </div>`;
             DOM.viewModal.innerHTML = modalContent;
             DOM.viewModal.classList.remove('hidden');
         };
-
-        /**
-         * Gera um PDF a partir da área de impressão.
-         */
+        
         const generatePdf = async () => {
             const printableArea = document.getElementById('printableArea');
             if (!printableArea) return;
             printableArea.scrollTop = 0;
             const clientName = printableArea.querySelector('h2').textContent.split('-').pop().trim();
             try {
-                const canvas = await html2canvas(printableArea, {
-                    scale: 2,
+                const canvas = await html2canvas(printableArea, { 
+                    scale: 2, 
                     useCORS: true,
                     scrollY: -window.scrollY
                 });
@@ -712,7 +536,7 @@
                 const imgWidth = canvas.width;
                 const imgHeight = canvas.height;
                 const ratio = imgHeight / imgWidth;
-
+                
                 const widthInPdf = pdfWidth - 20;
                 const heightInPdf = widthInPdf * ratio;
 
@@ -727,102 +551,124 @@
                     heightLeft -= (pdfHeight - 20);
                 }
                 pdf.save(`Pedido_${clientName.replace(/\s/g, '_')}.pdf`);
-            } catch (error) {
-                console.error('Erro ao gerar PDF:', error);
-                showInfoModal("Não foi possível gerar o PDF. Tente novamente mais tarde.");
-            }
+            } catch (error) { console.error("Erro ao gerar PDF:", error); alert("Não foi possível gerar o PDF."); }
         };
 
-        /**
-         * Renderiza a lista de pedidos na página principal.
-         * @param {array} orders - O array de pedidos a ser renderizado.
-         */
-        const renderOrders = (orders) => {
-            DOM.ordersList.innerHTML = '';
-            if (orders.length === 0) {
-                DOM.ordersList.innerHTML = `<p class="text-center text-gray-500 col-span-full">Nenhum pedido encontrado. Clique em "Novo Pedido" para começar.</p>`;
-                return;
-            }
-            orders.forEach(order => {
-                const totalValue = (order.parts || []).reduce((sum, p) => sum + (p.quantity * p.unitPrice), 0);
-                const card = document.createElement('div');
-                card.className = `bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-600 relative overflow-hidden transition-all duration-300 hover:scale-[1.02]`;
-                card.innerHTML = `
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="text-xl font-bold text-gray-900">${order.clientName}</h3>
-                        <span class="status-badge status-${order.orderStatus.replace(/\s/g, '-')}">${order.orderStatus}</span>
-                    </div>
-                    <p class="text-sm text-gray-600 mb-2"><strong>Total:</strong> <span class="font-semibold text-blue-600">R$ ${totalValue.toFixed(2)}</span></p>
-                    <p class="text-sm text-gray-600 mb-4"><strong>Data Entrega:</strong> ${order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : 'N/A'}</p>
-                    <div class="flex space-x-2">
-                         <button data-id="${order.id}" class="view-btn bg-gray-200 text-gray-800 font-semibold py-1 px-3 rounded-lg text-sm hover:bg-gray-300 transition-colors">Detalhes</button>
-                         <button data-id="${order.id}" class="edit-btn bg-yellow-200 text-yellow-800 font-semibold py-1 px-3 rounded-lg text-sm hover:bg-yellow-300 transition-colors">Editar</button>
-                         <button data-id="${order.id}" class="delete-btn bg-red-200 text-red-800 font-semibold py-1 px-3 rounded-lg text-sm hover:bg-red-300 transition-colors">Excluir</button>
-                    </div>
-                `;
-                DOM.ordersList.appendChild(card);
-            });
+        const getDateStatusColor = (dateString) => {
+            if (!dateString) return 'text-gray-500';
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const deliveryDate = new Date(dateString.replace(/-/g, '\/'));
+            deliveryDate.setHours(0, 0, 0, 0);
+            
+            const diffTime = deliveryDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) return 'text-red-600 font-bold'; // Atrasado
+            if (diffDays === 0) return 'text-red-500 font-semibold'; // Hoje
+            if (diffDays <= 7) return 'text-orange-500'; // Próximos 7 dias
+            return 'text-green-600'; // Mais de 7 dias
         };
 
-        /**
-         * Configura o ouvinte em tempo real para a coleção de pedidos.
-         */
-        const setupFirestoreListener = () => {
-            if (!dbCollection) return;
-            DOM.loadingIndicator.classList.remove('hidden');
-
-            onSnapshot(dbCollection, (snapshot) => {
+        const loadOrders = () => {
+            DOM.loadingIndicator.style.display = 'block';
+            const q = query(dbCollection);
+            onSnapshot(q, (snapshot) => {
+                DOM.ordersList.innerHTML = '';
                 allOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderOrders(allOrders);
-                DOM.loadingIndicator.classList.add('hidden');
-                console.log("Dados atualizados do Firestore.");
+
+                allOrders.sort((a, b) => {
+                    const dateA = a.deliveryDate ? new Date(a.deliveryDate) : new Date('9999-12-31');
+                    const dateB = b.deliveryDate ? new Date(b.deliveryDate) : new Date('9999-12-31');
+                    return dateA - dateB;
+                });
+
+                if (allOrders.length === 0) {
+                    DOM.ordersList.innerHTML = `<div class="text-center col-span-full">Nenhum pedido encontrado. Adicione um novo!</div>`;
+                } else {
+                    allOrders.forEach(order => {
+                        const card = document.createElement('div');
+                        card.className = 'bg-white rounded-lg shadow p-5 flex flex-col justify-between';
+                        const totalQty = (order.parts || []).reduce((sum, p) => sum + (p.quantity || 0), 0);
+                        const deliveryDateFormatted = order.deliveryDate ? new Date(order.deliveryDate.replace(/-/g, '\/')).toLocaleDateString() : 'Sem data';
+                        const dateColorClass = getDateStatusColor(order.deliveryDate);
+
+                        card.innerHTML = `
+                            <div>
+                                <div class="flex justify-between items-start">
+                                    <h3 class="font-bold text-lg text-gray-800">${order.clientName}</h3>
+                                    <span class="text-sm font-medium py-1 px-3 rounded-full">${order.orderStatus}</span>
+                                </div>
+                                <p class="text-gray-600 text-sm mt-2">Entrega: <span class="${dateColorClass}">${deliveryDateFormatted}</span></p>
+                                <p class="text-gray-600 text-sm">${totalQty} Itens</p>
+                            </div>
+                            <div class="flex justify-end space-x-2 mt-4">
+                                <button class="view-btn text-blue-600 hover:text-blue-800 text-sm" data-id="${order.id}">Visualizar</button>
+                                <button class="edit-btn text-yellow-600 hover:text-yellow-800 text-sm" data-id="${order.id}">Editar</button>
+                                <button class="delete-btn text-red-600 hover:text-red-800 text-sm" data-id="${order.id}">Excluir</button>
+                            </div>`;
+                        DOM.ordersList.appendChild(card);
+                    });
+                }
+                DOM.loadingIndicator.style.display = 'none';
             }, (error) => {
-                console.error("Erro ao ouvir o Firestore:", error);
-                DOM.loadingIndicator.textContent = "Erro ao carregar dados.";
-                showInfoModal("Não foi possível carregar os pedidos. Verifique sua conexão e regras do Firebase.");
+                console.error("Erro ao carregar:", error);
+                DOM.loadingIndicator.textContent = 'Erro ao carregar os pedidos.';
             });
         };
+        
+        function setupEventListeners() {
+            document.body.addEventListener('click', (e) => {
+                if (e.target.closest('.view-btn')) viewOrder(e.target.closest('.view-btn').dataset.id);
+                if (e.target.closest('.edit-btn')) editOrder(e.target.closest('.edit-btn').dataset.id);
+                if (e.target.closest('.delete-btn')) deleteOrder(e.target.closest('.delete-btn').dataset.id);
+                if (e.target.id === 'closeViewBtn') DOM.viewModal.classList.add('hidden');
+                if (e.target.id === 'printPdfBtn') generatePdf();
+            });
 
-        // Event Listeners
-        window.addEventListener('load', initializeFirebase);
-        DOM.addOrderBtn.addEventListener('click', () => {
-            resetForm();
-            document.getElementById('modalTitle').textContent = 'Novo Pedido';
-            DOM.orderModal.classList.remove('hidden');
-        });
-        DOM.cancelBtn.addEventListener('click', () => {
-            DOM.orderModal.classList.add('hidden');
-        });
-        DOM.orderForm.addEventListener('submit', saveOrder);
-        DOM.partsContainer.addEventListener('input', updateFinancials);
-        DOM.financialsContainer.addEventListener('input', updateFinancials);
-        DOM.downPayment.addEventListener('input', updateFinancials);
-        DOM.ordersList.addEventListener('click', (e) => {
-            const btn = e.target.closest('button');
-            if (!btn) return;
-            const id = btn.dataset.id;
-            if (btn.classList.contains('edit-btn')) editOrder(id);
-            if (btn.classList.contains('delete-btn')) deleteOrder(id);
-            if (btn.classList.contains('view-btn')) viewOrder(id);
-        });
-        DOM.viewModal.addEventListener('click', (e) => {
-            if (e.target.id === 'closeViewBtn') DOM.viewModal.classList.add('hidden');
-            if (e.target.id === 'printPdfBtn') generatePdf();
-        });
-        DOM.btnComum.addEventListener('click', () => {
-            currentOrderType = 'comum';
-            DOM.btnComum.classList.add('active');
-            DOM.btnDetalhado.classList.remove('active');
-            renderComumView();
-        });
-        DOM.btnDetalhado.addEventListener('click', () => {
-            currentOrderType = 'detalhado';
-            DOM.btnDetalhado.classList.add('active');
-            DOM.btnComum.classList.remove('active');
-            renderDetalhadoView();
-        });
-        DOM.addPartBtn.addEventListener('click', () => addPart());
+            DOM.addPartBtn.addEventListener('click', () => addPart());
+            DOM.financialsContainer.addEventListener('input', updateFinancials);
+            DOM.downPayment.addEventListener('input', updateFinancials);
+            
+            DOM.btnComum.addEventListener('click', () => {
+                currentOrderType = 'comum';
+                DOM.btnComum.classList.add('active');
+                DOM.btnDetalhado.classList.remove('active');
+                renderComumView();
+            });
+            DOM.btnDetalhado.addEventListener('click', () => {
+                currentOrderType = 'detalhado';
+                DOM.btnDetalhado.classList.add('active');
+                DOM.btnComum.classList.remove('active');
+                renderDetalhadoView();
+            });
+            
+            DOM.addOrderBtn.addEventListener('click', () => {
+                resetForm();
+                DOM.orderModal.classList.remove('hidden');
+            });
 
+            DOM.cancelBtn.addEventListener('click', () => DOM.orderModal.classList.add('hidden'));
+            DOM.orderForm.addEventListener('submit', saveOrder);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    dbCollection = collection(db, `users/${userId}/orders`);
+                    loadOrders();
+                } else {
+                    try { 
+                        await signInAnonymously(auth); 
+                    } catch (error) {
+                        console.error("Erro na autenticação:", error);
+                        DOM.loadingIndicator.textContent = 'Erro de autenticação.';
+                    }
+                }
+            });
+        });
     </script>
 </body>
 </html>
