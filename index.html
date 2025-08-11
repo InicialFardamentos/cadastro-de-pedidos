@@ -37,7 +37,7 @@
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
             <div class="mb-4 sm:mb-0">
                 <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos</h1>
-                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos 1.5.</p>
+                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos 1.6.</p>
             </div>
             <button id="addOrderBtn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -178,9 +178,11 @@
     // IMGBB_API_KEY é uma chave pública, segura para ser exposta.
     const IMGBB_API_KEY = "99f3a6d84b391aad3ca5b787b5ee3783";
     
-    // Configuração do Firebase (AGORA CORRIGIDA)
+    // Configuração do Firebase
     const firebaseConfig = {
-      apiKey: "AlzaSyCy3LxIJ_cY1R-t7qPJPzSYBUyvpGV9zXw",
+      // CORREÇÃO: A chave deve começar com "AIzaSy" (A, I maiúsculo, z, a...).
+      // A versão anterior estava com "AlzaSy" (A, L minúsculo, z, a...).
+      apiKey: "AIzaSyCy3LxIJ_cY1R-t7qPJPzSYBUyvpGV9zXw",
       authDomain: "meus-pedidos-app-521d6.firebaseapp.com",
       projectId: "meus-pedidos-app-521d6",
       storageBucket: "meus-pedidos-app-521d6.appspot.com",
@@ -188,7 +190,7 @@
       appId: "1:782022322907:web:c36fa6f6ed321dce313afe"
     };
     
-    const appId = 'default-app-id'; // Mantenha ou altere conforme sua estrutura de dados
+    const appId = 'default-app-id';
 
     let app;
     let db;
@@ -257,6 +259,7 @@
                 if (user) {
                     userId = user.uid;
                     console.log("Usuário autenticado com sucesso. User ID:", userId);
+                    DOM.loadingIndicator.textContent = 'Carregando...';
                     dbCollection = collection(db, `artifacts/${appId}/users/${userId}/orders`);
                     setupFirestoreListener();
                 } else {
@@ -267,7 +270,7 @@
         } catch (error) {
             console.error("Erro detalhado na inicialização do Firebase:", error);
             showInfoModal("Erro na inicialização do app. Verifique o console para mais informações.");
-            DOM.loadingIndicator.textContent = "Erro de inicialização.";
+            DOM.loadingIndicator.textContent = "Erro da inicialização.";
         }
     };
     
@@ -303,7 +306,6 @@
         }
 
         onSnapshot(query(dbCollection), (snapshot) => {
-            DOM.loadingIndicator.style.display = 'block';
             allOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             
             allOrders.sort((a, b) => {
