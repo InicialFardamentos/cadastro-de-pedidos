@@ -45,7 +45,7 @@
     <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 hidden">
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <div class="mb-4 sm:mb-0">
-                <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos 1.4</h1>
+                <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos 1.5</h1>
                 <p id="userEmail" class="text-gray-600 mt-1">Bem-vindo(a)!</p>
             </div>
             <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
@@ -129,33 +129,58 @@
     const editOrder = (orderId) => { const orderData = allOrders.find(o => o.id === orderId); if (!orderData) return; resetForm(); currentOrderType = orderData.orderType || 'comum'; updateOrderTypeUI(); document.getElementById('orderId').value = orderId; document.getElementById('clientName').value = orderData.clientName; document.getElementById('clientPhone').value = orderData.clientPhone; document.getElementById('orderStatus').value = orderData.orderStatus; document.getElementById('orderDate').value = orderData.orderDate; document.getElementById('deliveryDate').value = orderData.deliveryDate; document.getElementById('generalObservation').value = orderData.generalObservation; DOM.downPayment.value = orderData.downPayment || 0; document.getElementById('paymentMethod').value = orderData.paymentMethod || ''; if (orderData.mockupUrls && orderData.mockupUrls.length) { const filesHtml = orderData.mockupUrls.map(url => `<div><a href="${url}" target="_blank" class="text-blue-500 hover:underline">${url.split('/').pop()}</a></div>`).join(''); document.getElementById('existingFilesContainer').innerHTML = filesHtml; } (orderData.parts || []).forEach(addPart); DOM.orderModal.classList.remove('hidden'); };
     const resetForm = () => { DOM.orderForm.reset(); document.getElementById('orderId').value = ''; document.getElementById('modalTitle').textContent = 'Novo Pedido'; DOM.partsContainer.innerHTML = ''; DOM.financialsContainer.innerHTML = ''; document.getElementById('existingFilesContainer').innerHTML = ''; partCounter = 0; document.getElementById('orderDate').value = new Date().toISOString().split('T')[0]; updateFinancials(); };
     const updateOrderTypeUI = () => { DOM.btnComum.classList.toggle('active', currentOrderType === 'comum'); DOM.btnDetalhado.classList.toggle('active', currentOrderType !== 'comum'); DOM.partsContainer.innerHTML = ''; DOM.financialsContainer.innerHTML = ''; partCounter = 0; updateFinancials(); };
-    const viewOrder = (orderId) => { const order = allOrders.find(o => o.id === orderId); if (!order) return; let totalValue = 0; let partsHtml = (order.parts || []).map(p => { const subtotal = (p.quantity || 0) * (p.unitPrice || 0); totalValue += subtotal; let itemsDetailHtml = ''; if (p.sizes) { itemsDetailHtml = '<div class="text-xs text-gray-600 pl-2 mt-1">' + Object.entries(p.sizes).map(([cat, sizes]) => `<strong>${cat}:</strong> ${Object.entries(sizes).map(([size, qty]) => `${size}(${qty})`).join(', ')}`).join('<br>') + '</div>'; } return `<tr><td class="py-1 px-2 border">${p.type}${itemsDetailHtml}</td><td class="py-1 px-2 border">${p.material}</td><td class="py-1 px-2 border">${p.colorMain}</td><td class="py-1 px-2 border text-center">${p.quantity}</td><td class="py-1 px-2 border text-right">R$ ${(p.unitPrice || 0).toFixed(2)}</td><td class="py-1 px-2 border text-right font-semibold">R$ ${subtotal.toFixed(2)}</td></tr>`; }).join(''); const modalContent = `<div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col"><div id="printableArea" class="p-8 overflow-y-auto"><h2 class="text-2xl font-bold mb-4">Detalhes do Pedido - ${order.clientName}</h2><div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4"><div><strong>Telefone:</strong> ${order.clientPhone || 'N/A'}</div><div><strong>Status:</strong> <span class="font-semibold">${order.orderStatus}</span></div><div><strong>Data do Pedido:</strong> ${order.orderDate ? new Date(order.orderDate + 'T00:00:00').toLocaleDateString() : 'N/A'}</div><div><strong>Data de Entrega:</strong> ${order.deliveryDate ? new Date(order.deliveryDate + 'T00:00:00').toLocaleDateString() : 'N/A'}</div></div><h3 class="font-bold text-lg mt-4">Peças</h3><table class="w-full text-left text-sm mt-2"><thead><tr class="bg-gray-100"><th class="px-2 py-1">Tipo/Tamanhos</th><th class="px-2 py-1">Material</th><th class="px-2 py-1">Cor</th><th class="px-2 py-1 text-center">Qtd</th><th class="px-2 py-1 text-right">V. Un.</th><th class="px-2 py-1 text-right">Subtotal</th></tr></thead><tbody>${partsHtml}</tbody></table><h3 class="font-bold text-lg mt-4">Observação Geral</h3><p class="text-sm p-2 border rounded-md mt-2 min-h-[40px]">${order.generalObservation || 'Nenhuma.'}</p><h3 class="font-bold text-lg mt-4">Financeiro</h3><div class="grid grid-cols-2 gap-x-8 mt-2 border-t pt-4"><div><strong>Valor Total:</strong> <span class="font-bold text-xl">R$ ${totalValue.toFixed(2)}</span></div><div><strong>Adiantamento:</strong> R$ ${(order.downPayment || 0).toFixed(2)}</div><div><strong>Forma de Pagamento:</strong> ${order.paymentMethod || 'N/A'}</div><div class="font-bold text-red-600 text-xl"><strong>Resta Pagar:</strong> R$ ${(totalValue - (order.downPayment || 0)).toFixed(2)}</div></div><h3 class="font-bold text-lg mt-4">Arquivos</h3><div class="flex flex-wrap gap-4 mt-2 mockup-container">${(order.mockupUrls || []).map(url => `<a href="${url}" target="_blank"><img src="${url}" class="w-32 h-32 object-cover border rounded-md mockup-image"></a>`).join('') || 'Nenhum arquivo.'}</div></div><div class="p-4 bg-gray-100 border-t flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4"><button id="printPdfBtn" data-name="${order.clientName}" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg">Gerar PDF</button><button id="closeViewBtn" class="bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg">Fechar</button></div></div>`; DOM.viewModal.innerHTML = modalContent; DOM.viewModal.classList.remove('hidden'); };
+    const viewOrder = (orderId) => { const order = allOrders.find(o => o.id === orderId); if (!order) return; let totalValue = 0; let partsHtml = (order.parts || []).map(p => { const subtotal = (p.quantity || 0) * (p.unitPrice || 0); totalValue += subtotal; let itemsDetailHtml = ''; if (p.sizes) { itemsDetailHtml = '<div class="text-xs text-gray-600 pl-2 mt-1">' + Object.entries(p.sizes).map(([cat, sizes]) => `<strong>${cat}:</strong> ${Object.entries(sizes).map(([size, qty]) => `${size}(${qty})`).join(', ')}`).join('<br>') + '</div>'; } return `<tr><td class="py-1 px-2 border">${p.type}${itemsDetailHtml}</td><td class="py-1 px-2 border">${p.material}</td><td class="py-1 px-2 border">${p.colorMain}</td><td class="py-1 px-2 border text-center">${p.quantity}</td><td class="py-1 px-2 border text-right">R$ ${(p.unitPrice || 0).toFixed(2)}</td><td class="py-1 px-2 border text-right font-semibold">R$ ${subtotal.toFixed(2)}</td></tr>`; }).join(''); const modalContent = `<div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col"><div id="printableArea" class="p-8 overflow-y-auto"><h2 class="text-2xl font-bold mb-4">Detalhes do Pedido - ${order.clientName}</h2><div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4"><div><strong>Telefone:</strong> ${order.clientPhone || 'N/A'}</div><div><strong>Status:</strong> <span class="font-semibold">${order.orderStatus}</span></div><div><strong>Data do Pedido:</strong> ${order.orderDate ? new Date(order.orderDate + 'T00:00:00').toLocaleDateString() : 'N/A'}</div><div><strong>Data de Entrega:</strong> ${order.deliveryDate ? new Date(order.deliveryDate + 'T00:00:00').toLocaleDateString() : 'N/A'}</div></div><h3 class="font-bold text-lg mt-4">Peças</h3><table class="w-full text-left text-sm mt-2"><thead><tr class="bg-gray-100"><th class="px-2 py-1">Tipo/Tamanhos</th><th class="px-2 py-1">Material</th><th class="px-2 py-1">Cor</th><th class="px-2 py-1 text-center">Qtd</th><th class="px-2 py-1 text-right">V. Un.</th><th class="px-2 py-1 text-right">Subtotal</th></tr></thead><tbody>${partsHtml}</tbody></table><h3 class="font-bold text-lg mt-4">Observação Geral</h3><p class="text-sm p-2 border rounded-md mt-2 min-h-[40px]">${order.generalObservation || 'Nenhuma.'}</p><h3 class="font-bold text-lg mt-4">Financeiro</h3><div class="grid grid-cols-2 gap-x-8 mt-2 border-t pt-4"><div><strong>Valor Total:</strong> <span class="font-bold text-xl">R$ ${totalValue.toFixed(2)}</span></div><div><strong>Adiantamento:</strong> R$ ${(order.downPayment || 0).toFixed(2)}</div><div><strong>Forma de Pagamento:</strong> ${order.paymentMethod || 'N/A'}</div><div class="font-bold text-red-600 text-xl"><strong>Resta Pagar:</strong> R$ ${(totalValue - (order.downPayment || 0)).toFixed(2)}</div></div><h3 class="font-bold text-lg mt-4">Arquivos</h3><div id="mockupContainerPdf" class="flex flex-wrap gap-4 mt-2">${(order.mockupUrls || []).map(url => `<a href="${url}" target="_blank"><img src="${url}" class="w-32 h-32 object-cover border rounded-md mockup-image"></a>`).join('') || 'Nenhum arquivo.'}</div></div><div class="p-4 bg-gray-100 border-t flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4"><button id="printPdfBtn" data-name="${order.clientName}" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg">Gerar PDF</button><button id="closeViewBtn" class="bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg">Fechar</button></div></div>`; DOM.viewModal.innerHTML = modalContent; DOM.viewModal.classList.remove('hidden'); };
+    
+    // ATUALIZAÇÃO FINAL: Lógica de PDF aprimorada
     const generatePdf = async (clientName) => {
         const content = document.getElementById('printableArea');
-        const mockupContainer = content.querySelector('.mockup-container');
+        const mockupContainer = content.querySelector('#mockupContainerPdf');
+        
         if (mockupContainer) {
             mockupContainer.style.flexDirection = 'column';
+            mockupContainer.style.gap = '20px';
+            mockupContainer.style.padding = '20px';
             mockupContainer.querySelectorAll('.mockup-image').forEach(img => {
                 img.style.width = '100%';
                 img.style.height = 'auto';
-                img.style.maxWidth = '400px';
+                img.style.maxWidth = '500px';
             });
         }
+
         try {
             const { jsPDF } = window.jspdf;
             const canvas = await html2canvas(content, { scale: 2, useCORS: true });
             const imgData = canvas.toDataURL('image/png');
+            
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            
             const imgProps = pdf.getImageProperties(imgData);
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+            heightLeft -= pageHeight;
+
+            while (heightLeft > 0) {
+                position = -heightLeft;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
             pdf.save(`Pedido_${clientName.replace(/\s/g, '_')}.pdf`);
+
         } catch (error) {
+            console.error("Erro ao gerar PDF:", error);
             showInfoModal("Não foi possível gerar o PDF.");
         } finally {
             if (mockupContainer) {
                 mockupContainer.style.flexDirection = '';
+                mockupContainer.style.gap = '';
+                mockupContainer.style.padding = '';
                 mockupContainer.querySelectorAll('.mockup-image').forEach(img => {
                     img.style.width = '';
                     img.style.height = '';
