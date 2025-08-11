@@ -54,39 +54,27 @@
         .status-Em-Produção { @apply bg-purple-100 text-purple-800; }
         .status-Finalizado { @apply bg-green-100 text-green-800; }
         .status-Entregue { @apply bg-gray-200 text-gray-800; }
-
-        /* Ajustes específicos para layout de PC */
-        .pc-container {
-            max-width: 1200px; /* Largura fixa para desktop */
-            margin: auto;
-        }
-
-        .pc-grid-cols-3 {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 1.5rem;
-        }
     </style>
 </head>
 <body class="antialiased text-gray-800">
 
-    <div id="app" class="pc-container p-4">
-        <header class="flex justify-between items-center mb-8">
-            <div>
+    <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+            <div class="mb-4 sm:mb-0">
                 <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos</h1>
-                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos 1.1.</p>
+                <p class="text-gray-600 mt-1">Sua ferramenta de gestão de fardamentos 1.2.</p>
             </div>
             <button id="addOrderBtn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                 Novo Pedido
             </button>
         </header>
-        <main id="ordersList" class="pc-grid-cols-3">
+        <main id="ordersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div id="loadingIndicator" class="text-center col-span-full">Carregando...</div>
         </main>
     </div>
 
-    <div id="orderModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+    <div id="orderModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden modal-enter">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-y-auto">
             <form id="orderForm" class="p-8 space-y-6">
                 <h2 id="modalTitle" class="text-2xl font-bold">Novo Pedido</h2>
@@ -94,8 +82,8 @@
 
                 <fieldset class="border p-4 rounded-lg">
                     <legend class="text-lg font-semibold px-2">1. Dados do Cliente e Datas</legend>
-                    <div class="grid grid-cols-4 gap-4 mt-2">
-                        <input type="text" id="clientName" placeholder="Nome do Cliente" class="p-2 border rounded-md w-full col-span-2" required>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
+                        <input type="text" id="clientName" placeholder="Nome do Cliente" class="p-2 border rounded-md w-full col-span-1 sm:col-span-2 lg:col-span-2" required>
                         <input type="text" id="clientPhone" placeholder="Telefone" class="p-2 border rounded-md w-full">
                         <select id="orderStatus" class="p-2 border rounded-md w-full bg-white"><option value="Pendente">Pendente</option><option value="Confirmado">Confirmado</option><option value="Em Produção">Em Produção</option><option value="Finalizado">Finalizado</option><option value="Entregue">Entregue</option></select>
                         <div><label for="orderDate" class="text-xs">Data Pedido</label><input type="date" id="orderDate" class="p-2 border rounded-md w-full"></div>
@@ -132,7 +120,7 @@
                 <fieldset class="border p-4 rounded-lg">
                     <legend class="text-lg font-semibold px-2">6. Financeiro</legend>
                     <div id="financialsContainer" class="space-y-4 mb-4"></div>
-                    <div class="grid grid-cols-4 gap-4 border-t pt-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 border-t pt-4">
                         <input type="number" step="0.01" id="downPayment" placeholder="Adiantamento (R$)" class="p-2 border rounded-md w-full">
                         <input type="text" id="paymentMethod" placeholder="Forma de Pagamento" class="p-2 border rounded-md w-full">
                         <div class="bg-gray-100 p-3 rounded-lg text-center">
@@ -146,7 +134,7 @@
                     </div>
                 </fieldset>
 
-                <div class="flex justify-end items-center space-x-4 mt-8">
+                <div class="flex flex-col sm:flex-row justify-end items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 mt-8">
                     <div id="uploadIndicator" class="text-sm text-blue-600 font-semibold hidden">Salvando...</div>
                     <button type="button" id="cancelBtn" class="bg-gray-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-gray-600">Cancelar</button>
                     <button type="submit" id="saveBtn" class="bg-green-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-green-700">Salvar Pedido</button>
@@ -155,10 +143,10 @@
         </div>
     </div>
 
-    <div id="viewModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden"></div>
+    <div id="viewModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden modal-enter"></div>
 
     <!-- Modal de erro ou informação -->
-    <div id="infoModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+    <div id="infoModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden modal-enter">
         <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full">
             <p id="infoModalMessage" class="text-lg font-semibold text-center mb-4"></p>
             <div class="flex justify-center">
@@ -169,8 +157,8 @@
 
     <template id="partTemplate">
         <div class="part-item border p-3 rounded-md bg-gray-50 relative">
-            <div class="grid grid-cols-5 gap-2">
-                <input type="text" placeholder="Tipo (ex: Gola Redonda Manga Curta)" class="p-2 border rounded-md w-full col-span-2 part-type">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
+                <input type="text" placeholder="Tipo (ex: Gola Redonda Manga Curta)" class="p-2 border rounded-md w-full col-span-1 md:col-span-2 part-type">
                 <input type="text" placeholder="Material (ex: Dry-Fit)" class="p-2 border rounded-md w-full part-material">
                 <input type="text" placeholder="Cor Malha" class="p-2 border rounded-md w-full part-color-main">
                 <input type="text" placeholder="Cor Manga/Gola" class="p-2 border rounded-md w-full part-color-details">
@@ -190,7 +178,7 @@
 
     <template id="detalhadoOrderTemplate">
         <div class="space-y-2">
-            <div class="grid grid-cols-12 gap-2 font-semibold text-sm px-1">
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 font-semibold text-sm px-1">
                 <div class="col-span-3">Tipo de Peça</div>
                 <div class="col-span-2">Tamanho</div>
                 <div class="col-span-4">Nome na Camisa</div>
@@ -206,10 +194,11 @@
         import { getFirestore, collection, addDoc, onSnapshot, doc, getDoc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
+        // IMGBB_API_KEY é uma chave pública, segura para ser exposta.
         const IMGBB_API_KEY = "99f3a6d84b391aad3ca5b787b5ee3783";
 
         // As configurações do Firebase e o token de autenticação são fornecidos pelo ambiente
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
@@ -262,7 +251,8 @@
          * Inicializa o Firebase e a autenticação.
          */
         const initializeFirebase = async () => {
-            // Verifica se a configuração do Firebase é válida.
+            // VERIFICAÇÃO DE PROJETO: Garante que a configuração do Firebase é válida.
+            // A captura de tela mostrou que essa era a causa do problema.
             if (!firebaseConfig || !firebaseConfig.projectId) {
                 console.error("Erro na configuração do Firebase: projectId não fornecido.");
                 showInfoModal("Erro na inicialização do app. Certifique-se de que está a correr este código num ambiente que forneça a configuração do Firebase.");
@@ -395,7 +385,7 @@
             for (const category in categories) {
                 html += `<div class="p-3 border rounded-md">
                             <h4 class="font-semibold mb-2">${category}</h4>
-                            <div class="grid grid-cols-6 gap-4 justify-start">`;
+                            <div class="grid grid-cols-3 sm:grid-cols-6 gap-4 justify-start">`;
                 categories[category].forEach(size => {
                     const value = itemsData[category]?.[size] || '';
                     html += `<div class="size-input-container">
@@ -418,8 +408,8 @@
             const listContainer = template.querySelector('.detailed-items-list');
             const addRow = (item = {}) => {
                 const row = document.createElement('div');
-                row.className = 'grid grid-cols-12 gap-2 items-center detailed-item-row';
-                row.innerHTML = `<div class="col-span-3"><input type="text" placeholder="Tipo Peça" class="p-1 border rounded-md w-full text-sm item-det-type" value="${item.type || ''}"></div><div class="col-span-2"><input type="text" placeholder="Tamanho" class="p-1 border rounded-md w-full text-sm item-det-size" value="${item.size || ''}"></div><div class="col-span-4"><input type="text" placeholder="Nome na camisa" class="p-1 border rounded-md w-full text-sm item-det-name" value="${item.name || ''}"></div><div class="col-span-2"><input type="text" placeholder="Número" class="p-1 border rounded-md w-full text-sm item-det-number" value="${item.number || ''}"></div><div class="col-span-1 flex justify-center"><button type="button" class="text-red-500 remove-detailed-row">&times;</button></div>`;
+                row.className = 'grid grid-cols-1 sm:grid-cols-12 gap-2 items-center detailed-item-row';
+                row.innerHTML = `<div class="col-span-1 sm:col-span-3"><input type="text" placeholder="Tipo Peça" class="p-1 border rounded-md w-full text-sm item-det-type" value="${item.type || ''}"></div><div class="col-span-1 sm:col-span-2"><input type="text" placeholder="Tamanho" class="p-1 border rounded-md w-full text-sm item-det-size" value="${item.size || ''}"></div><div class="col-span-1 sm:col-span-4"><input type="text" placeholder="Nome na camisa" class="p-1 border rounded-md w-full text-sm item-det-name" value="${item.name || ''}"></div><div class="col-span-1 sm:col-span-2"><input type="text" placeholder="Número" class="p-1 border rounded-md w-full text-sm item-det-number" value="${item.number || ''}"></div><div class="col-span-1 sm:col-span-1 flex justify-center"><button type="button" class="text-red-500 remove-detailed-row">&times;</button></div>`;
                 row.querySelector('.remove-detailed-row').addEventListener('click', () => row.remove());
                 listContainer.appendChild(row);
             };
@@ -668,12 +658,12 @@
             const modalContent = `<div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col">
                     <div id="printableArea" class="p-8 overflow-y-auto printable-area">
                         <h2 class="text-2xl font-bold mb-4">Detalhes do Pedido - ${order.clientName}</h2>
-                        <div class="grid grid-cols-2 gap-x-8 gap-y-2 mb-4 text-sm">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 mb-4 text-sm">
                             <div><strong>Cliente:</strong> ${order.clientName}</div>
                             <div><strong>Telefone:</strong> ${order.clientPhone || 'N/A'}</div>
                             <div><strong>Data do Pedido:</strong> ${order.orderDate ? new Date(order.orderDate.replace(/-/g, '\/')).toLocaleDateString() : 'N/A'}</div>
                             <div><strong>Data da Entrega:</strong> ${order.deliveryDate ? new Date(order.deliveryDate.replace(/-/g, '\/')).toLocaleDateString() : 'N/A'}</div>
-                            <div><strong>Status:</strong> <span class="status-badge status-${order.orderStatus.replace(/\s/g, '-')}}">${order.orderStatus}</span></div>
+                            <div><strong>Status:</strong> <span class="status-badge status-${order.orderStatus.replace(/\s/g, '-')}">${order.orderStatus}</span></div>
                         </div>
                         <h3 class="font-bold text-lg mt-4">Descrição das Peças</h3>
                         <div class="overflow-x-auto">
@@ -684,7 +674,7 @@
                         <h3 class="font-bold text-lg mt-4">Observação Geral</h3>
                         <p class="text-sm border p-2 rounded-md bg-gray-50 mt-2">${order.generalObservation || 'Nenhuma.'}</p>
                         <h3 class="font-bold text-lg mt-4">Financeiro</h3>
-                        <div class="grid grid-cols-2 gap-4 text-sm mt-2 p-3 bg-gray-100 rounded-lg">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mt-2 p-3 bg-gray-100 rounded-lg">
                             <div><strong>Valor Total:</strong> <span class="font-bold">R$ ${totalValue.toFixed(2)}</span></div>
                             <div><strong>Adiantamento:</strong> R$ ${(order.downPayment || 0).toFixed(2)}</div>
                             <div><strong>Forma de Pagamento:</strong> ${order.paymentMethod || 'N/A'}</div>
@@ -693,7 +683,7 @@
                         <h3 class="font-bold text-lg mt-4">Arquivos</h3>
                         <div class="flex flex-wrap gap-4 mt-2">${(order.mockupUrls || []).map(url => `<a href="${url}" target="_blank"><img src="${url}" class="w-32 h-32 object-cover border rounded-md"></a>`).join('')}</div>
                     </div>
-                    <div class="p-4 bg-gray-100 border-t flex justify-end space-x-4">
+                    <div class="p-4 bg-gray-100 border-t flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
                          <button id="closeViewBtn" class="bg-gray-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-gray-600">Fechar</button>
                          <button id="printPdfBtn" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700">Gerar PDF</button>
                     </div>
