@@ -57,17 +57,27 @@
     </div>
 
     <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 hidden">
-        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <div class="mb-4 sm:mb-0">
-                <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos 1.3</h1>
+                <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos 1.4</h1>
                 <p id="userEmail" class="text-gray-600 mt-1">Bem-vindo(a)!</p>
             </div>
-            <div>
-                <button id="addOrderBtn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
+            <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                <button id="addOrderBtn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                     Novo Pedido
                 </button>
-                <button id="logoutBtn" class="mt-2 w-full bg-red-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-600 transition duration-300">Sair</button>
+                <div class="flex flex-col">
+                    <div class="border rounded-lg p-2 bg-gray-50">
+                        <h3 class="text-sm font-semibold text-center text-gray-700 mb-2">Ferramentas</h3>
+                        <div class="flex gap-2">
+                            <button id="backupBtn" class="flex-1 bg-green-600 text-white text-sm font-semibold py-2 px-3 rounded-lg hover:bg-green-700 transition">Fazer Backup</button>
+                            <label for="restoreFile" class="flex-1 bg-yellow-500 text-white text-sm font-semibold py-2 px-3 rounded-lg hover:bg-yellow-600 transition cursor-pointer text-center">Importar Backup</label>
+                            <input type="file" id="restoreFile" class="hidden" accept=".json">
+                        </div>
+                    </div>
+                    <button id="logoutBtn" class="mt-2 w-full bg-red-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-600 transition">Sair</button>
+                </div>
             </div>
         </header>
 
@@ -81,65 +91,13 @@
             <form id="orderForm" class="p-8 space-y-6">
                 <h2 id="modalTitle" class="text-2xl font-bold">Novo Pedido</h2>
                 <input type="hidden" id="orderId">
-                <fieldset class="border p-4 rounded-lg">
-                    <legend class="text-lg font-semibold px-2">1. Dados do Cliente e Datas</legend>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-                        <input type="text" id="clientName" placeholder="Nome do Cliente" class="p-2 border rounded-md w-full col-span-1 sm:col-span-2 lg:col-span-2" required>
-                        <input type="text" id="clientPhone" placeholder="Telefone" class="p-2 border rounded-md w-full">
-                        <select id="orderStatus" class="p-2 border rounded-md w-full bg-white">
-                            <option value="Pendente">Pendente</option>
-                            <option value="Confirmado">Confirmado</option>
-                            <option value="Em Produção">Em Produção</option>
-                            <option value="Finalizado">Finalizado</option>
-                            <option value="Entregue">Entregue</option>
-                        </select>
-                        <div><label for="orderDate" class="text-xs">Data Pedido</label><input type="date" id="orderDate" class="p-2 border rounded-md w-full"></div>
-                        <div><label for="deliveryDate" class="text-xs">Data Entrega</label><input type="date" id="deliveryDate" class="p-2 border rounded-md w-full"></div>
-                    </div>
-                </fieldset>
-                <fieldset class="border p-4 rounded-lg">
-                    <legend class="text-lg font-semibold px-2">2. Arquivos da Arte (Mockup)</legend>
-                    <input type="file" id="mockupFiles" class="p-2 border rounded-md w-full mt-1 text-sm text-gray-500" accept="image/*" multiple>
-                    <div id="existingFilesContainer" class="text-sm text-gray-600 mt-2 space-y-1"></div>
-                </fieldset>
-                <fieldset class="border p-4 rounded-lg">
-                    <legend class="text-lg font-semibold px-2">3. Descrição das Peças</legend>
-                    <div id="partsContainer" class="space-y-4"></div>
-                    <button type="button" id="addPartBtn" class="mt-4 bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">Adicionar Peça (ex: Camisa, Calça)</button>
-                </fieldset>
-                <fieldset class="border p-4 rounded-lg">
-                    <legend class="text-lg font-semibold px-2">4. Itens e Personalização</legend>
-                    <div id="orderTypeSelector" class="flex space-x-2 mb-4">
-                        <button type="button" id="btnComum" class="tab-button active">Pedido Comum (por Quantidade)</button>
-                        <button type="button" id="btnDetalhado" class="tab-button">Pedido Detalhado (por Nome)</button>
-                    </div>
-                    <div id="itemsContent"></div>
-                </fieldset>
-                <fieldset class="border p-4 rounded-lg">
-                    <legend class="text-lg font-semibold px-2">5. Observação Geral</legend>
-                    <textarea id="generalObservation" class="w-full p-2 border rounded-md mt-2" rows="3" placeholder="Detalhes gerais, acabamentos, etc."></textarea>
-                </fieldset>
-                <fieldset class="border p-4 rounded-lg">
-                    <legend class="text-lg font-semibold px-2">6. Financeiro</legend>
-                    <div id="financialsContainer" class="space-y-4 mb-4"></div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 border-t pt-4">
-                        <input type="number" step="0.01" id="downPayment" placeholder="Adiantamento (R$)" class="p-2 border rounded-md w-full">
-                        <input type="text" id="paymentMethod" placeholder="Forma de Pagamento" class="p-2 border rounded-md w-full">
-                        <div class="bg-gray-100 p-3 rounded-lg text-center">
-                            <p class="text-sm text-gray-600">Total do Pedido</p>
-                            <p id="grandTotal" class="text-2xl font-bold text-blue-600">R$ 0,00</p>
-                        </div>
-                        <div class="bg-red-100 p-3 rounded-lg text-center">
-                            <p class="text-sm text-red-700">Resta Pagar</p>
-                            <p id="remainingTotal" class="text-2xl font-bold text-red-600">R$ 0,00</p>
-                        </div>
-                    </div>
-                </fieldset>
-                <div class="flex flex-col sm:flex-row justify-end items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 mt-8">
-                    <div id="uploadIndicator" class="text-sm text-blue-600 font-semibold hidden">Salvando...</div>
-                    <button type="button" id="cancelBtn" class="bg-gray-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-gray-600">Cancelar</button>
-                    <button type="submit" id="saveBtn" class="bg-green-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-green-700">Salvar Pedido</button>
-                </div>
+                <fieldset class="border p-4 rounded-lg"><legend class="text-lg font-semibold px-2">1. Dados do Cliente e Datas</legend><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2"><input type="text" id="clientName" placeholder="Nome do Cliente" class="p-2 border rounded-md w-full col-span-1 sm:col-span-2 lg:col-span-2" required><input type="text" id="clientPhone" placeholder="Telefone" class="p-2 border rounded-md w-full"><select id="orderStatus" class="p-2 border rounded-md w-full bg-white"><option value="Pendente">Pendente</option><option value="Confirmado">Confirmado</option><option value="Em Produção">Em Produção</option><option value="Finalizado">Finalizado</option><option value="Entregue">Entregue</option></select><div><label for="orderDate" class="text-xs">Data Pedido</label><input type="date" id="orderDate" class="p-2 border rounded-md w-full"></div><div><label for="deliveryDate" class="text-xs">Data Entrega</label><input type="date" id="deliveryDate" class="p-2 border rounded-md w-full"></div></div></fieldset>
+                <fieldset class="border p-4 rounded-lg"><legend class="text-lg font-semibold px-2">2. Arquivos da Arte (Mockup)</legend><input type="file" id="mockupFiles" class="p-2 border rounded-md w-full mt-1 text-sm text-gray-500" accept="image/*" multiple><div id="existingFilesContainer" class="text-sm text-gray-600 mt-2 space-y-1"></div></fieldset>
+                <fieldset class="border p-4 rounded-lg"><legend class="text-lg font-semibold px-2">3. Descrição das Peças</legend><div id="partsContainer" class="space-y-4"></div><button type="button" id="addPartBtn" class="mt-4 bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">Adicionar Peça (ex: Camisa, Calça)</button></fieldset>
+                <fieldset class="border p-4 rounded-lg"><legend class="text-lg font-semibold px-2">4. Itens e Personalização</legend><div id="orderTypeSelector" class="flex space-x-2 mb-4"><button type="button" id="btnComum" class="tab-button active">Pedido Comum (por Quantidade)</button><button type="button" id="btnDetalhado" class="tab-button">Pedido Detalhado (por Nome)</button></div><div id="itemsContent"></div></fieldset>
+                <fieldset class="border p-4 rounded-lg"><legend class="text-lg font-semibold px-2">5. Observação Geral</legend><textarea id="generalObservation" class="w-full p-2 border rounded-md mt-2" rows="3" placeholder="Detalhes gerais, acabamentos, etc."></textarea></fieldset>
+                <fieldset class="border p-4 rounded-lg"><legend class="text-lg font-semibold px-2">6. Financeiro</legend><div id="financialsContainer" class="space-y-4 mb-4"></div><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 border-t pt-4"><input type="number" step="0.01" id="downPayment" placeholder="Adiantamento (R$)" class="p-2 border rounded-md w-full"><input type="text" id="paymentMethod" placeholder="Forma de Pagamento" class="p-2 border rounded-md w-full"><div class="bg-gray-100 p-3 rounded-lg text-center"><p class="text-sm text-gray-600">Total do Pedido</p><p id="grandTotal" class="text-2xl font-bold text-blue-600">R$ 0,00</p></div><div class="bg-red-100 p-3 rounded-lg text-center"><p class="text-sm text-red-700">Resta Pagar</p><p id="remainingTotal" class="text-2xl font-bold text-red-600">R$ 0,00</p></div></div></fieldset>
+                <div class="flex flex-col sm:flex-row justify-end items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 mt-8"><div id="uploadIndicator" class="text-sm text-blue-600 font-semibold hidden">Salvando...</div><button type="button" id="cancelBtn" class="bg-gray-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-gray-600">Cancelar</button><button type="submit" id="saveBtn" class="bg-green-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-green-700">Salvar Pedido</button></div>
             </form>
         </div>
     </div>
@@ -159,7 +117,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, doc, getDoc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, getDoc, updateDoc, deleteDoc, query, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
     const IMGBB_API_KEY = "99f3a6d84b391aad3ca5b787b5ee3783";
@@ -184,6 +142,8 @@
         userEmail: document.getElementById('userEmail'),
         app: document.getElementById('app'),
         addOrderBtn: document.getElementById('addOrderBtn'),
+        backupBtn: document.getElementById('backupBtn'),
+        restoreFileInput: document.getElementById('restoreFile'),
         orderModal: document.getElementById('orderModal'),
         orderForm: document.getElementById('orderForm'),
         ordersList: document.getElementById('ordersList'),
@@ -212,33 +172,9 @@
     };
     DOM.infoModalCloseBtn.addEventListener('click', () => DOM.infoModal.classList.add('hidden'));
 
-    const handleSignUp = async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('signUpEmail').value;
-        const password = document.getElementById('signUpPassword').value;
-        try {
-            await createUserWithEmailAndPassword(auth, email, password);
-        } catch (error) {
-            if (error.code === 'auth/email-already-in-use') { showInfoModal('Este e-mail já está em uso. Tente fazer login.'); } 
-            else if (error.code === 'auth/weak-password') { showInfoModal('A senha precisa ter pelo menos 6 caracteres.'); } 
-            else { showInfoModal('Erro ao criar conta.'); }
-        }
-    };
-
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
-        try {
-            await signInWithEmailAndPassword(auth, email, password);
-        } catch (error) {
-            showInfoModal('E-mail ou senha incorretos.');
-        }
-    };
-
-    const handleLogout = () => {
-        signOut(auth).catch(error => console.error("Erro ao fazer logout:", error));
-    };
+    const handleSignUp = async (e) => { e.preventDefault(); const email = document.getElementById('signUpEmail').value; const password = document.getElementById('signUpPassword').value; try { await createUserWithEmailAndPassword(auth, email, password); } catch (error) { if (error.code === 'auth/email-already-in-use') { showInfoModal('Este e-mail já está em uso. Tente fazer login.'); } else if (error.code === 'auth/weak-password') { showInfoModal('A senha precisa ter pelo menos 6 caracteres.'); } else { showInfoModal('Erro ao criar conta.'); } } };
+    const handleLogin = async (e) => { e.preventDefault(); const email = document.getElementById('loginEmail').value; const password = document.getElementById('loginPassword').value; try { await signInWithEmailAndPassword(auth, email, password); } catch (error) { showInfoModal('E-mail ou senha incorretos.'); } };
+    const handleLogout = () => { signOut(auth).catch(error => console.error("Erro ao fazer logout:", error)); };
 
     const initializeAppLogic = (user) => {
         userId = user.uid;
@@ -252,7 +188,6 @@
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
-
             onAuthStateChanged(auth, (user) => {
                 if (user) {
                     DOM.authContainer.classList.add('hidden');
@@ -265,25 +200,20 @@
                 }
             });
         } catch (error) {
-            console.error("Erro Crítico na Inicialização:", error);
             showInfoModal("Ocorreu um erro crítico. Recarregue a página.");
         }
     };
     
     const setupFirestoreListener = () => {
-        if (!dbCollection) { return; }
+        if (!dbCollection) return;
         onSnapshot(query(dbCollection), (snapshot) => {
             allOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            allOrders.sort((a, b) => {
-                const dateA = a.orderDate ? new Date(a.orderDate + 'T00:00:00') : 0;
-                const dateB = b.orderDate ? new Date(b.orderDate + 'T00:00:00') :.0;
-                return dateB - dateA;
-            });
+            allOrders.sort((a, b) => new Date(b.orderDate + 'T00:00:00') - new Date(a.orderDate + 'T00:00:00'));
             renderOrders();
         }, (error) => {
-            console.error("Erro ao buscar pedidos (permissions?):", error);
+            console.error("Erro ao buscar pedidos:", error);
             DOM.loadingIndicator.style.display = 'none';
-            DOM.ordersList.innerHTML = '<p class="col-span-full text-center text-gray-500">Nenhum pedido encontrado para esta conta.</p>';
+            DOM.ordersList.innerHTML = '<p class="col-span-full text-center text-gray-500">Nenhum pedido encontrado.</p>';
         });
     };
     
@@ -292,30 +222,87 @@
         DOM.ordersList.innerHTML = allOrders.length ? allOrders.map(order => generateOrderCardHTML(order)).join('') : '<p class="col-span-full text-center text-gray-500">Nenhum pedido encontrado.</p>';
     };
 
-    // CORREÇÃO: A função abaixo estava faltando na versão anterior.
-    const generateOrderCardHTML = (order) => {
-        let totalValue = 0;
-        (order.parts || []).forEach(p => {
-            totalValue += (p.quantity || 0) * (p.unitPrice || 0);
-        });
-        
-        const deliveryDateFormatted = order.deliveryDate ? new Date(order.deliveryDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A';
+    // --- FUNÇÕES DE BACKUP E RESTAURAÇÃO (NOVAS) ---
 
-        return `<div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-                    <div class="flex justify-between items-start mb-2">
-                        <h3 class="text-xl font-bold text-gray-900">${order.clientName}</h3>
-                        <span class="status-badge status-${order.orderStatus.replace(/\s/g, '-')}">${order.orderStatus}</span>
-                    </div>
-                    <p class="text-sm text-gray-600 mb-2"><strong>Total:</strong> <span class="font-semibold text-blue-600">R$ ${totalValue.toFixed(2)}</span></p>
-                    <p class="text-sm text-gray-600 mb-4"><strong>Data Entrega:</strong> ${deliveryDateFormatted}</p>
-                    <div class="flex space-x-2 mt-auto pt-4 border-t border-gray-100">
-                        <button data-id="${order.id}" class="view-btn flex-1 bg-gray-200 text-gray-800 font-semibold py-1 px-3 rounded-lg text-sm hover:bg-gray-300 transition-colors">Detalhes</button>
-                        <button data-id="${order.id}" class="edit-btn flex-1 bg-yellow-200 text-yellow-800 font-semibold py-1 px-3 rounded-lg text-sm hover:bg-yellow-300 transition-colors">Editar</button>
-                        <button data-id="${order.id}" class="delete-btn flex-1 bg-red-200 text-red-800 font-semibold py-1 px-3 rounded-lg text-sm hover:bg-red-300 transition-colors">Excluir</button>
-                    </div>
-                </div>`;
+    const handleBackup = () => {
+        if (allOrders.length === 0) {
+            showInfoModal("Não há pedidos para fazer backup.");
+            return;
+        }
+        const dataStr = JSON.stringify(allOrders, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        const date = new Date().toISOString().split('T')[0];
+        link.download = `backup-pedidos-${date}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showInfoModal("Backup gerado com sucesso!");
     };
 
+    const handleRestore = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const ordersFromFile = JSON.parse(e.target.result);
+                if (!Array.isArray(ordersFromFile)) {
+                    throw new Error("Formato de arquivo inválido.");
+                }
+                await processRestore(ordersFromFile);
+            } catch (error) {
+                showInfoModal("Arquivo de backup inválido ou corrompido.");
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = ''; // Limpa o input para permitir o mesmo arquivo novamente
+    };
+
+    const processRestore = async (ordersFromFile) => {
+        const choice = confirm("Escolha o modo de importação:\n\n- Clique em 'OK' para ADICIONAR os pedidos do backup aos existentes.\n- Clique em 'Cancelar' para SUBSTITUIR todos os pedidos atuais pelos do backup.");
+
+        if (choice) { // ADICIONAR
+            const batch = writeBatch(db);
+            ordersFromFile.forEach(order => {
+                const { id, ...orderData } = order; // Remove o ID antigo para que o Firebase gere um novo
+                const newDocRef = doc(collection(db, `artifacts/${appId}/users/${userId}/orders`));
+                batch.set(newDocRef, orderData);
+            });
+            await batch.commit();
+            showInfoModal(`${ordersFromFile.length} pedidos foram ADICIONADOS com sucesso.`);
+        } else { // SUBSTITUIR
+            const confirmReplace = confirm("ATENÇÃO: Esta ação vai APAGAR TODOS os seus pedidos atuais. Esta ação NÃO PODE SER DESFEITA. Deseja continuar?");
+            if (confirmReplace) {
+                // Apagar todos os documentos existentes
+                const deleteBatch = writeBatch(db);
+                allOrders.forEach(order => {
+                    const docRef = doc(db, `artifacts/${appId}/users/${userId}/orders`, order.id);
+                    deleteBatch.delete(docRef);
+                });
+                await deleteBatch.commit();
+
+                // Adicionar os novos documentos
+                const addBatch = writeBatch(db);
+                ordersFromFile.forEach(order => {
+                    const { id, ...orderData } = order;
+                    const newDocRef = doc(collection(db, `artifacts/${appId}/users/${userId}/orders`));
+                    addBatch.set(newDocRef, orderData);
+                });
+                await addBatch.commit();
+                showInfoModal(`Todos os pedidos foram substituídos. ${ordersFromFile.length} novos pedidos importados.`);
+            }
+        }
+    };
+
+
+    // --- RESTANTE DO CÓDIGO DO APP ---
+
+    const generateOrderCardHTML = (order) => { let totalValue = 0; (order.parts || []).forEach(p => { totalValue += (p.quantity || 0) * (p.unitPrice || 0); }); const deliveryDateFormatted = order.deliveryDate ? new Date(order.deliveryDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A'; return `<div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow"><div class="flex justify-between items-start mb-2"><h3 class="text-xl font-bold text-gray-900">${order.clientName}</h3><span class="status-badge status-${order.orderStatus.replace(/\s/g, '-')}">${order.orderStatus}</span></div><p class="text-sm text-gray-600 mb-2"><strong>Total:</strong> <span class="font-semibold text-blue-600">R$ ${totalValue.toFixed(2)}</span></p><p class="text-sm text-gray-600 mb-4"><strong>Data Entrega:</strong> ${deliveryDateFormatted}</p><div class="flex space-x-2 mt-auto pt-4 border-t border-gray-100"><button data-id="${order.id}" class="view-btn flex-1 bg-gray-200 text-gray-800 font-semibold py-1 px-3 rounded-lg text-sm hover:bg-gray-300 transition-colors">Detalhes</button><button data-id="${order.id}" class="edit-btn flex-1 bg-yellow-200 text-yellow-800 font-semibold py-1 px-3 rounded-lg text-sm hover:bg-yellow-300 transition-colors">Editar</button><button data-id="${order.id}" class="delete-btn flex-1 bg-red-200 text-red-800 font-semibold py-1 px-3 rounded-lg text-sm hover:bg-red-300 transition-colors">Excluir</button></div></div>`; };
     const resetForm = () => { DOM.orderForm.reset(); document.getElementById('orderId').value = ''; document.getElementById('modalTitle').textContent = 'Novo Pedido'; DOM.partsContainer.innerHTML = ''; DOM.financialsContainer.innerHTML = ''; document.getElementById('existingFilesContainer').innerHTML = ''; DOM.itemsContent.innerHTML = ''; partCounter = 0; currentOrderType = 'comum'; DOM.btnComum.classList.add('active'); DOM.btnDetalhado.classList.remove('active'); document.getElementById('orderDate').value = new Date().toISOString().split('T')[0]; renderComumView({}); updateFinancials(); };
     let currentOrderType = 'comum'; let partCounter = 0;
     const fileToBase64 = (file) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result.split(',')[1]); reader.onerror = error => reject(error); });
@@ -336,6 +323,8 @@
     DOM.signUpForm.addEventListener('submit', handleSignUp);
     DOM.loginForm.addEventListener('submit', handleLogin);
     DOM.logoutBtn.addEventListener('click', handleLogout);
+    DOM.backupBtn.addEventListener('click', handleBackup);
+    DOM.restoreFileInput.addEventListener('change', handleRestore);
     DOM.addOrderBtn.addEventListener('click', () => { resetForm(); DOM.orderModal.classList.remove('hidden'); });
     DOM.cancelBtn.addEventListener('click', () => DOM.orderModal.classList.add('hidden'));
     DOM.addPartBtn.addEventListener('click', () => addPart());
