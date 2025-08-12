@@ -45,7 +45,7 @@
     <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 hidden">
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <div class="mb-4 sm:mb-0">
-                <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos 1.5</h1>
+                <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos 1.6</h1>
                 <p id="userEmail" class="text-gray-600 mt-1">Bem-vindo(a)!</p>
             </div>
             <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
@@ -159,82 +159,22 @@
     DOM.stayLoggedInBtn.addEventListener('click', resetIdleTimer);
     ['mousemove', 'keydown', 'click', 'scroll'].forEach(event => window.addEventListener(event, resetIdleTimer));
 
-    // --- LÓGICA DE GERENCIAMENTO DE OPÇÕES (NOVO) ---
     const defaultOptions = {
         partTypes: ['Gola redonda manga curta', 'Gola redonda manga longa', 'Gola redonda manga longa com capuz', 'Gola redonda manga curta (sublimada na frente)', 'Gola polo manga curta', 'Gola polo manga longa', 'Gola V manga curta', 'Gola V manga longa', 'Short', 'Calça'],
         materialTypes: ['Malha fria', 'Drifity', 'Cacharrel', 'PP', 'Algodão Fio 30', 'TNT drive', 'Piquê', 'Brim']
     };
-
-    const getOptionsFromStorage = (type) => {
-        const stored = localStorage.getItem(type);
-        return stored ? JSON.parse(stored) : defaultOptions[type];
-    };
-
-    const saveOptionsToStorage = (type, options) => {
-        localStorage.setItem(type, JSON.stringify(options));
-    };
-
-    const populateDatalists = () => {
-        const partTypes = getOptionsFromStorage('partTypes');
-        const materialTypes = getOptionsFromStorage('materialTypes');
-        DOM.partTypeList.innerHTML = partTypes.map(opt => `<option value="${opt}"></option>`).join('');
-        DOM.partMaterialList.innerHTML = materialTypes.map(opt => `<option value="${opt}"></option>`).join('');
-    };
-
-    const initializeAndPopulateDatalists = () => {
-        if (!localStorage.getItem('partTypes')) saveOptionsToStorage('partTypes', defaultOptions.partTypes);
-        if (!localStorage.getItem('materialTypes')) saveOptionsToStorage('materialTypes', defaultOptions.materialTypes);
-        populateDatalists();
-    };
-
+    const getOptionsFromStorage = (type) => { const stored = localStorage.getItem(type); return stored ? JSON.parse(stored) : defaultOptions[type]; };
+    const saveOptionsToStorage = (type, options) => { localStorage.setItem(type, JSON.stringify(options)); };
+    const populateDatalists = () => { const partTypes = getOptionsFromStorage('partTypes'); const materialTypes = getOptionsFromStorage('materialTypes'); DOM.partTypeList.innerHTML = partTypes.map(opt => `<option value="${opt}"></option>`).join(''); DOM.partMaterialList.innerHTML = materialTypes.map(opt => `<option value="${opt}"></option>`).join(''); };
+    const initializeAndPopulateDatalists = () => { if (!localStorage.getItem('partTypes')) saveOptionsToStorage('partTypes', defaultOptions.partTypes); if (!localStorage.getItem('materialTypes')) saveOptionsToStorage('materialTypes', defaultOptions.materialTypes); populateDatalists(); };
     let currentOptionType = '';
-    const openOptionsModal = (type) => {
-        currentOptionType = type;
-        const title = type === 'partTypes' ? 'Tipos de Peça' : 'Tipos de Material';
-        const options = getOptionsFromStorage(type);
-        DOM.optionsModalTitle.textContent = `Gerenciar ${title}`;
-        DOM.optionsList.innerHTML = options.map((opt, index) => `
-            <div class="flex justify-between items-center p-2 bg-gray-100 rounded-md">
-                <span>${opt}</span>
-                <button class="delete-option-btn text-red-500 hover:text-red-700 font-bold" data-index="${index}">&times;</button>
-            </div>
-        `).join('');
-        DOM.optionsModal.classList.remove('hidden');
-    };
-
-    const addOption = () => {
-        const newOption = DOM.newOptionInput.value.trim();
-        if (newOption && currentOptionType) {
-            let options = getOptionsFromStorage(currentOptionType);
-            if (!options.includes(newOption)) {
-                options.push(newOption);
-                saveOptionsToStorage(currentOptionType, options);
-                populateDatalists();
-                openOptionsModal(currentOptionType); // Refresh modal list
-                DOM.newOptionInput.value = '';
-            }
-        }
-    };
-
-    const deleteOption = (index) => {
-        if (currentOptionType) {
-            let options = getOptionsFromStorage(currentOptionType);
-            options.splice(index, 1);
-            saveOptionsToStorage(currentOptionType, options);
-            populateDatalists();
-            openOptionsModal(currentOptionType); // Refresh modal list
-        }
-    };
-
+    const openOptionsModal = (type) => { currentOptionType = type; const title = type === 'partTypes' ? 'Tipos de Peça' : 'Tipos de Material'; const options = getOptionsFromStorage(type); DOM.optionsModalTitle.textContent = `Gerenciar ${title}`; DOM.optionsList.innerHTML = options.map((opt, index) => `<div class="flex justify-between items-center p-2 bg-gray-100 rounded-md"><span>${opt}</span><button class="delete-option-btn text-red-500 hover:text-red-700 font-bold" data-index="${index}">&times;</button></div>`).join(''); DOM.optionsModal.classList.remove('hidden'); };
+    const addOption = () => { const newOption = DOM.newOptionInput.value.trim(); if (newOption && currentOptionType) { let options = getOptionsFromStorage(currentOptionType); if (!options.includes(newOption)) { options.push(newOption); saveOptionsToStorage(currentOptionType, options); populateDatalists(); openOptionsModal(currentOptionType); DOM.newOptionInput.value = ''; } } };
+    const deleteOption = (index) => { if (currentOptionType) { let options = getOptionsFromStorage(currentOptionType); options.splice(index, 1); saveOptionsToStorage(currentOptionType, options); populateDatalists(); openOptionsModal(currentOptionType); } };
     DOM.addOptionBtn.addEventListener('click', addOption);
     DOM.closeOptionsModalBtn.addEventListener('click', () => DOM.optionsModal.classList.add('hidden'));
-    DOM.optionsList.addEventListener('click', (e) => {
-        if (e.target.classList.contains('delete-option-btn')) {
-            deleteOption(e.target.dataset.index);
-        }
-    });
+    DOM.optionsList.addEventListener('click', (e) => { if (e.target.classList.contains('delete-option-btn')) { deleteOption(e.target.dataset.index); } });
 
-    // --- LÓGICA DO APLICATIVO ---
     const setupFirestoreListener = () => { if (!dbCollection) return; onSnapshot(query(dbCollection), (snapshot) => { allOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderOrders(); }, (error) => { console.error("Erro ao buscar pedidos:", error); DOM.loadingIndicator.style.display = 'none'; DOM.ordersList.innerHTML = '<p class="col-span-full text-center text-gray-500">Nenhum pedido encontrado.</p>'; }); };
     const getDeliveryCountdown = (deliveryDate) => { if (!deliveryDate) return { text: 'Sem data', color: 'gray' }; const today = new Date(); today.setHours(0, 0, 0, 0); const delivery = new Date(deliveryDate + 'T00:00:00'); delivery.setHours(0, 0, 0, 0); const diffTime = delivery.getTime() - today.getTime(); const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); if (diffDays < 0) return { text: `Atrasado há ${Math.abs(diffDays)} dia(s)`, color: 'red' }; if (diffDays === 0) return { text: 'Entrega hoje', color: 'red' }; if (diffDays === 1) return { text: 'Resta 1 dia', color: 'yellow' }; if (diffDays <= 3) return { text: `Restam ${diffDays} dias`, color: 'yellow' }; return { text: `Restam ${diffDays} dias`, color: 'green' }; };
     const renderOrders = () => { DOM.loadingIndicator.style.display = 'none'; const nonDeliveredOrders = allOrders.filter(o => o.orderStatus !== 'Entregue' && o.deliveryDate); if (nonDeliveredOrders.length === 0) { DOM.ordersList.innerHTML = '<div class="w-full text-center text-gray-500">Nenhum pedido com entrega pendente.</div>'; return; } nonDeliveredOrders.sort((a, b) => new Date(a.deliveryDate) - new Date(b.deliveryDate)); const groupedOrders = nonDeliveredOrders.reduce((acc, order) => { const date = order.deliveryDate; if (!acc[date]) { acc[date] = []; } acc[date].push(order); return acc; }, {}); let html = ''; for (const date in groupedOrders) { const orders = groupedOrders[date]; const formattedDate = new Date(date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }); html += `<div class="kanban-column"><h2 class="font-bold text-lg text-gray-800 mb-3 sticky top-0 bg-f3f4f6 py-2">${formattedDate}</h2><div class="space-y-4">${orders.map(order => generateOrderCardHTML(order)).join('')}</div></div>`; } DOM.ordersList.innerHTML = html; };
@@ -250,6 +190,7 @@
     const collectFormData = () => { const orderData = { clientName: document.getElementById('clientName').value, clientPhone: document.getElementById('clientPhone').value, orderStatus: document.getElementById('orderStatus').value, orderDate: document.getElementById('orderDate').value, deliveryDate: document.getElementById('deliveryDate').value, generalObservation: document.getElementById('generalObservation').value, orderType: currentOrderType, parts: [], downPayment: parseFloat(DOM.downPayment.value) || 0, paymentMethod: document.getElementById('paymentMethod').value, mockupUrls: Array.from(document.getElementById('existingFilesContainer').querySelectorAll('a')).map(a => a.href) }; DOM.partsContainer.querySelectorAll('.part-item').forEach(pItem => { const partId = pItem.dataset.partId; const finRow = DOM.financialsContainer.querySelector(`.financial-item[data-part-id="${partId}"]`); const part = { type: pItem.querySelector('.part-type').value, material: pItem.querySelector('.part-material').value, colorMain: pItem.querySelector('.part-color-main').value, quantity: parseInt(finRow.querySelector('.financial-quantity').value) || 0, unitPrice: parseFloat(finRow.querySelector('.financial-price').value) || 0, sizes: {} }; if (currentOrderType === 'comum') { pItem.querySelectorAll('.size-input').forEach(input => { if (input.value) { const { category, size } = input.dataset; if (!part.sizes[category]) part.sizes[category] = {}; part.sizes[category][size] = parseInt(input.value, 10); } }); } orderData.parts.push(part); }); return orderData; };
     const saveOrder = async (e) => { e.preventDefault(); DOM.saveBtn.disabled = true; DOM.uploadIndicator.classList.remove('hidden'); try { const files = document.getElementById('mockupFiles').files; const uploadPromises = Array.from(files).map(file => fileToBase64(file).then(uploadToImgBB)); const newUrls = (await Promise.all(uploadPromises)).filter(Boolean); const orderData = collectFormData(); orderData.mockupUrls.push(...newUrls); const orderId = document.getElementById('orderId').value; if (orderId) { await updateDoc(doc(dbCollection, orderId), orderData); } else { await addDoc(dbCollection, orderData); } DOM.orderModal.classList.add('hidden'); } catch (error) { console.error("ERRO DETALHADO AO SALVAR:", error); showInfoModal('Erro ao salvar o pedido.'); } finally { DOM.saveBtn.disabled = false; DOM.uploadIndicator.classList.add('hidden'); } };
     const editOrder = (orderId) => { const orderData = allOrders.find(o => o.id === orderId); if (!orderData) return; resetForm(); currentOrderType = orderData.orderType || 'comum'; updateOrderTypeUI(); document.getElementById('orderId').value = orderId; document.getElementById('clientName').value = orderData.clientName; document.getElementById('clientPhone').value = orderData.clientPhone; document.getElementById('orderStatus').value = orderData.orderStatus; document.getElementById('orderDate').value = orderData.orderDate; document.getElementById('deliveryDate').value = orderData.deliveryDate; document.getElementById('generalObservation').value = orderData.generalObservation; DOM.downPayment.value = orderData.downPayment || 0; document.getElementById('paymentMethod').value = orderData.paymentMethod || ''; if (orderData.mockupUrls && orderData.mockupUrls.length) { const filesHtml = orderData.mockupUrls.map(url => `<div><a href="${url}" target="_blank" class="text-blue-500 hover:underline">${url.split('/').pop()}</a></div>`).join(''); document.getElementById('existingFilesContainer').innerHTML = filesHtml; } (orderData.parts || []).forEach(addPart); DOM.orderModal.classList.remove('hidden'); };
+    const deleteOrder = async (id) => { if (confirm('Tem certeza que deseja excluir este pedido? Esta ação não pode ser desfeita.')) { try { await deleteDoc(doc(dbCollection, id)); showInfoModal("Pedido excluído com sucesso."); } catch (error) { console.error("Erro ao excluir pedido:", error); showInfoModal("Não foi possível excluir o pedido."); } } };
     const resetForm = () => { DOM.orderForm.reset(); document.getElementById('orderId').value = ''; document.getElementById('modalTitle').textContent = 'Novo Pedido'; DOM.partsContainer.innerHTML = ''; DOM.financialsContainer.innerHTML = ''; document.getElementById('existingFilesContainer').innerHTML = ''; partCounter = 0; document.getElementById('orderDate').value = new Date().toISOString().split('T')[0]; updateFinancials(); };
     const updateOrderTypeUI = () => { DOM.btnComum.classList.toggle('active', currentOrderType === 'comum'); DOM.btnDetalhado.classList.toggle('active', currentOrderType !== 'comum'); DOM.partsContainer.innerHTML = ''; DOM.financialsContainer.innerHTML = ''; partCounter = 0; updateFinancials(); };
     const viewOrder = (orderId) => { const order = allOrders.find(o => o.id === orderId); if (!order) return; let totalValue = 0; let partsHtml = (order.parts || []).map(p => { const subtotal = (p.quantity || 0) * (p.unitPrice || 0); totalValue += subtotal; let itemsDetailHtml = ''; if (p.sizes) { itemsDetailHtml = '<div class="text-xs text-gray-600 pl-2 mt-1">' + Object.entries(p.sizes).map(([cat, sizes]) => `<strong>${cat}:</strong> ${Object.entries(sizes).map(([size, qty]) => `${size}(${qty})`).join(', ')}`).join('<br>') + '</div>'; } return `<tr><td class="py-1 px-2 border">${p.type}${itemsDetailHtml}</td><td class="py-1 px-2 border">${p.material}</td><td class="py-1 px-2 border">${p.colorMain}</td><td class="py-1 px-2 border text-center">${p.quantity}</td><td class="py-1 px-2 border text-right">R$ ${(p.unitPrice || 0).toFixed(2)}</td><td class="py-1 px-2 border text-right font-semibold">R$ ${subtotal.toFixed(2)}</td></tr>`; }).join(''); const modalContent = `<div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col"><div id="printableArea" class="p-8 overflow-y-auto"><h2 class="text-2xl font-bold mb-4">Detalhes do Pedido - ${order.clientName}</h2><div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4"><div><strong>Telefone:</strong> ${order.clientPhone || 'N/A'}</div><div><strong>Status:</strong> <span class="font-semibold">${order.orderStatus}</span></div><div><strong>Data do Pedido:</strong> ${order.orderDate ? new Date(order.orderDate + 'T00:00:00').toLocaleDateString() : 'N/A'}</div><div><strong>Data de Entrega:</strong> ${order.deliveryDate ? new Date(order.deliveryDate + 'T00:00:00').toLocaleDateString() : 'N/A'}</div></div><h3 class="font-bold text-lg mt-4">Peças</h3><table class="w-full text-left text-sm mt-2"><thead><tr class="bg-gray-100"><th class="px-2 py-1">Tipo/Tamanhos</th><th class="px-2 py-1">Material</th><th class="px-2 py-1">Cor</th><th class="px-2 py-1 text-center">Qtd</th><th class="px-2 py-1 text-right">V. Un.</th><th class="px-2 py-1 text-right">Subtotal</th></tr></thead><tbody>${partsHtml}</tbody></table><h3 class="font-bold text-lg mt-4">Observação Geral</h3><p class="text-sm p-2 border rounded-md mt-2 min-h-[40px]">${order.generalObservation || 'Nenhuma.'}</p><h3 class="font-bold text-lg mt-4">Financeiro</h3><div class="grid grid-cols-2 gap-x-8 mt-2 border-t pt-4"><div><strong>Valor Total:</strong> <span class="font-bold text-xl">R$ ${totalValue.toFixed(2)}</span></div><div><strong>Adiantamento:</strong> R$ ${(order.downPayment || 0).toFixed(2)}</div><div><strong>Forma de Pagamento:</strong> ${order.paymentMethod || 'N/A'}</div><div class="font-bold text-red-600 text-xl"><strong>Resta Pagar:</strong> R$ ${(totalValue - (order.downPayment || 0)).toFixed(2)}</div></div><h3 class="font-bold text-lg mt-4">Arquivos</h3><div id="mockupContainerPdf" class="flex flex-wrap gap-4 mt-2">${(order.mockupUrls || []).map(url => `<a href="${url}" target="_blank"><img src="${url}" class="w-32 h-32 object-cover border rounded-md mockup-image"></a>`).join('') || 'Nenhum arquivo.'}</div></div><div class="p-4 bg-gray-100 border-t flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4"><button id="printPdfBtn" data-name="${order.clientName}" data-id="${order.id}" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg">PDF Pedido</button><button id="printMockupsBtn" data-name="${order.clientName}" data-id="${order.id}" class="bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg">PDF Mockups</button><button id="closeViewBtn" class="bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg">Fechar</button></div></div>`; DOM.viewModal.innerHTML = modalContent; DOM.viewModal.classList.remove('hidden'); };
