@@ -34,7 +34,6 @@
 </head>
 <body class="antialiased text-gray-800">
 
-    <!-- Container de Autenticação -->
     <div id="authContainer" class="flex items-center justify-center min-h-screen">
         <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-md">
             <form id="loginForm"><h2 class="text-2xl font-bold text-center">Login</h2><div class="mt-4 space-y-4"><input type="email" id="loginEmail" placeholder="E-mail" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required><input type="password" id="loginPassword" placeholder="Senha" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><button type="submit" class="w-full px-4 py-2 mt-6 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700">Entrar</button></form>
@@ -43,11 +42,10 @@
         </div>
     </div>
 
-    <!-- Container Principal do App -->
     <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 hidden">
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <div class="mb-4 sm:mb-0">
-                <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos 1.2</h1>
+                <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos 1.3</h1>
                 <p id="userEmail" class="text-gray-600 mt-1">Bem-vindo(a)!</p>
             </div>
             <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
@@ -60,7 +58,6 @@
         </main>
     </div>
 
-    <!-- Modais -->
     <div id="orderModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden modal-enter">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-y-auto">
             <form id="orderForm" class="p-8 space-y-6">
@@ -82,7 +79,6 @@
         </div>
     </div>
 
-    <!-- Templates -->
     <template id="partTemplate"><div class="part-item border p-4 rounded-md bg-gray-50 relative space-y-3"><button type="button" class="remove-part-btn absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center">&times;</button><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3"><input type="text" placeholder="Tipo da Peça (ex: Camisa Gola V)" class="p-2 border rounded-md w-full col-span-1 md:col-span-2 part-type"><input type="text" placeholder="Material (ex: Dry-Fit)" class="p-2 border rounded-md w-full part-material"><input type="text" placeholder="Cor Principal" class="p-2 border rounded-md w-full part-color-main"></div><div class="part-content-container"></div></div></template>
     <template id="comumPartContentTemplate"><button type="button" class="toggle-sizes-btn mt-2 bg-blue-100 text-blue-800 text-sm font-semibold py-1 px-3 rounded-lg hover:bg-blue-200">Tamanhos</button><div class="sizes-grid hidden mt-3 space-y-4"></div></template>
     <template id="detalhadoPartContentTemplate"><div class="detailed-items-list space-y-2 mt-3"></div><button type="button" class="add-detailed-row-btn mt-2 bg-gray-200 text-gray-800 text-sm py-1 px-3 rounded-lg hover:bg-gray-300">+ Adicionar Linha</button></template>
@@ -133,63 +129,75 @@
     const editOrder = (orderId) => { const orderData = allOrders.find(o => o.id === orderId); if (!orderData) return; resetForm(); currentOrderType = orderData.orderType || 'comum'; updateOrderTypeUI(); document.getElementById('orderId').value = orderId; document.getElementById('clientName').value = orderData.clientName; document.getElementById('clientPhone').value = orderData.clientPhone; document.getElementById('orderStatus').value = orderData.orderStatus; document.getElementById('orderDate').value = orderData.orderDate; document.getElementById('deliveryDate').value = orderData.deliveryDate; document.getElementById('generalObservation').value = orderData.generalObservation; DOM.downPayment.value = orderData.downPayment || 0; document.getElementById('paymentMethod').value = orderData.paymentMethod || ''; if (orderData.mockupUrls && orderData.mockupUrls.length) { const filesHtml = orderData.mockupUrls.map(url => `<div><a href="${url}" target="_blank" class="text-blue-500 hover:underline">${url.split('/').pop()}</a></div>`).join(''); document.getElementById('existingFilesContainer').innerHTML = filesHtml; } (orderData.parts || []).forEach(addPart); DOM.orderModal.classList.remove('hidden'); };
     const resetForm = () => { DOM.orderForm.reset(); document.getElementById('orderId').value = ''; document.getElementById('modalTitle').textContent = 'Novo Pedido'; DOM.partsContainer.innerHTML = ''; DOM.financialsContainer.innerHTML = ''; document.getElementById('existingFilesContainer').innerHTML = ''; partCounter = 0; document.getElementById('orderDate').value = new Date().toISOString().split('T')[0]; updateFinancials(); };
     const updateOrderTypeUI = () => { DOM.btnComum.classList.toggle('active', currentOrderType === 'comum'); DOM.btnDetalhado.classList.toggle('active', currentOrderType !== 'comum'); DOM.partsContainer.innerHTML = ''; DOM.financialsContainer.innerHTML = ''; partCounter = 0; updateFinancials(); };
-    const viewOrder = (orderId) => { const order = allOrders.find(o => o.id === orderId); if (!order) return; let totalValue = 0; let partsHtml = (order.parts || []).map(p => { const subtotal = (p.quantity || 0) * (p.unitPrice || 0); totalValue += subtotal; let itemsDetailHtml = ''; if (p.sizes) { itemsDetailHtml = '<div class="text-xs text-gray-600 pl-2 mt-1">' + Object.entries(p.sizes).map(([cat, sizes]) => `<strong>${cat}:</strong> ${Object.entries(sizes).map(([size, qty]) => `${size}(${qty})`).join(', ')}`).join('<br>') + '</div>'; } return `<tr><td class="py-1 px-2 border">${p.type}${itemsDetailHtml}</td><td class="py-1 px-2 border">${p.material}</td><td class="py-1 px-2 border">${p.colorMain}</td><td class="py-1 px-2 border text-center">${p.quantity}</td><td class="py-1 px-2 border text-right">R$ ${(p.unitPrice || 0).toFixed(2)}</td><td class="py-1 px-2 border text-right font-semibold">R$ ${subtotal.toFixed(2)}</td></tr>`; }).join(''); const modalContent = `<div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col"><div id="printableArea" class="p-8 overflow-y-auto"><h2 class="text-2xl font-bold mb-4">Detalhes do Pedido - ${order.clientName}</h2><div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4"><div><strong>Telefone:</strong> ${order.clientPhone || 'N/A'}</div><div><strong>Status:</strong> <span class="font-semibold">${order.orderStatus}</span></div><div><strong>Data do Pedido:</strong> ${order.orderDate ? new Date(order.orderDate + 'T00:00:00').toLocaleDateString() : 'N/A'}</div><div><strong>Data de Entrega:</strong> ${order.deliveryDate ? new Date(order.deliveryDate + 'T00:00:00').toLocaleDateString() : 'N/A'}</div></div><h3 class="font-bold text-lg mt-4">Peças</h3><table class="w-full text-left text-sm mt-2"><thead><tr class="bg-gray-100"><th class="px-2 py-1">Tipo/Tamanhos</th><th class="px-2 py-1">Material</th><th class="px-2 py-1">Cor</th><th class="px-2 py-1 text-center">Qtd</th><th class="px-2 py-1 text-right">V. Un.</th><th class="px-2 py-1 text-right">Subtotal</th></tr></thead><tbody>${partsHtml}</tbody></table><h3 class="font-bold text-lg mt-4">Observação Geral</h3><p class="text-sm p-2 border rounded-md mt-2 min-h-[40px]">${order.generalObservation || 'Nenhuma.'}</p><h3 class="font-bold text-lg mt-4">Financeiro</h3><div class="grid grid-cols-2 gap-x-8 mt-2 border-t pt-4"><div><strong>Valor Total:</strong> <span class="font-bold text-xl">R$ ${totalValue.toFixed(2)}</span></div><div><strong>Adiantamento:</strong> R$ ${(order.downPayment || 0).toFixed(2)}</div><div><strong>Forma de Pagamento:</strong> ${order.paymentMethod || 'N/A'}</div><div class="font-bold text-red-600 text-xl"><strong>Resta Pagar:</strong> R$ ${(totalValue - (order.downPayment || 0)).toFixed(2)}</div></div><h3 class="font-bold text-lg mt-4">Arquivos</h3><div id="mockupContainerPdf" class="flex flex-wrap gap-4 mt-2">${(order.mockupUrls || []).map(url => `<a href="${url}" target="_blank"><img src="${url}" class="w-32 h-32 object-cover border rounded-md mockup-image"></a>`).join('') || 'Nenhum arquivo.'}</div></div><div class="p-4 bg-gray-100 border-t flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4"><button id="printPdfBtn" data-name="${order.clientName}" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg">Gerar PDF</button><button id="closeViewBtn" class="bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg">Fechar</button></div></div>`; DOM.viewModal.innerHTML = modalContent; DOM.viewModal.classList.remove('hidden'); };
+    const viewOrder = (orderId) => { const order = allOrders.find(o => o.id === orderId); if (!order) return; let totalValue = 0; let partsHtml = (order.parts || []).map(p => { const subtotal = (p.quantity || 0) * (p.unitPrice || 0); totalValue += subtotal; let itemsDetailHtml = ''; if (p.sizes) { itemsDetailHtml = '<div class="text-xs text-gray-600 pl-2 mt-1">' + Object.entries(p.sizes).map(([cat, sizes]) => `<strong>${cat}:</strong> ${Object.entries(sizes).map(([size, qty]) => `${size}(${qty})`).join(', ')}`).join('<br>') + '</div>'; } return `<tr><td class="py-1 px-2 border">${p.type}${itemsDetailHtml}</td><td class="py-1 px-2 border">${p.material}</td><td class="py-1 px-2 border">${p.colorMain}</td><td class="py-1 px-2 border text-center">${p.quantity}</td><td class="py-1 px-2 border text-right">R$ ${(p.unitPrice || 0).toFixed(2)}</td><td class="py-1 px-2 border text-right font-semibold">R$ ${subtotal.toFixed(2)}</td></tr>`; }).join(''); const modalContent = `<div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col"><div id="printableArea" class="p-8 overflow-y-auto"><h2 class="text-2xl font-bold mb-4">Detalhes do Pedido - ${order.clientName}</h2><div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4"><div><strong>Telefone:</strong> ${order.clientPhone || 'N/A'}</div><div><strong>Status:</strong> <span class="font-semibold">${order.orderStatus}</span></div><div><strong>Data do Pedido:</strong> ${order.orderDate ? new Date(order.orderDate + 'T00:00:00').toLocaleDateString() : 'N/A'}</div><div><strong>Data de Entrega:</strong> ${order.deliveryDate ? new Date(order.deliveryDate + 'T00:00:00').toLocaleDateString() : 'N/A'}</div></div><h3 class="font-bold text-lg mt-4">Peças</h3><table class="w-full text-left text-sm mt-2"><thead><tr class="bg-gray-100"><th class="px-2 py-1">Tipo/Tamanhos</th><th class="px-2 py-1">Material</th><th class="px-2 py-1">Cor</th><th class="px-2 py-1 text-center">Qtd</th><th class="px-2 py-1 text-right">V. Un.</th><th class="px-2 py-1 text-right">Subtotal</th></tr></thead><tbody>${partsHtml}</tbody></table><h3 class="font-bold text-lg mt-4">Observação Geral</h3><p class="text-sm p-2 border rounded-md mt-2 min-h-[40px]">${order.generalObservation || 'Nenhuma.'}</p><h3 class="font-bold text-lg mt-4">Financeiro</h3><div class="grid grid-cols-2 gap-x-8 mt-2 border-t pt-4"><div><strong>Valor Total:</strong> <span class="font-bold text-xl">R$ ${totalValue.toFixed(2)}</span></div><div><strong>Adiantamento:</strong> R$ ${(order.downPayment || 0).toFixed(2)}</div><div><strong>Forma de Pagamento:</strong> ${order.paymentMethod || 'N/A'}</div><div class="font-bold text-red-600 text-xl"><strong>Resta Pagar:</strong> R$ ${(totalValue - (order.downPayment || 0)).toFixed(2)}</div></div><h3 class="font-bold text-lg mt-4">Arquivos</h3><div id="mockupContainerPdf" class="flex flex-wrap gap-4 mt-2">${(order.mockupUrls || []).map(url => `<a href="${url}" target="_blank"><img src="${url}" class="w-32 h-32 object-cover border rounded-md mockup-image"></a>`).join('') || 'Nenhum arquivo.'}</div></div><div class="p-4 bg-gray-100 border-t flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4"><button id="printPdfBtn" data-name="${order.clientName}" data-id="${order.id}" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg">PDF Pedido</button><button id="printMockupsBtn" data-name="${order.clientName}" data-id="${order.id}" class="bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg">PDF Mockups</button><button id="closeViewBtn" class="bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg">Fechar</button></div></div>`; DOM.viewModal.innerHTML = modalContent; DOM.viewModal.classList.remove('hidden'); };
     
-    const generatePdf = async (clientName) => {
+    const generateOrderPdf = async (clientName) => {
         const content = document.getElementById('printableArea');
-        const mockupContainer = content.querySelector('#mockupContainerPdf');
-        
-        if (mockupContainer) {
-            mockupContainer.style.padding = '10px';
-            mockupContainer.style.flexDirection = 'column';
-            mockupContainer.style.gap = '10px';
-            mockupContainer.querySelectorAll('.mockup-image').forEach(img => {
-                img.style.width = '100%';
-                img.style.height = 'auto';
-                img.style.maxWidth = '400px';
-            });
-        }
-
         try {
             const { jsPDF } = window.jspdf;
             const canvas = await html2canvas(content, { scale: 2, useCORS: true });
             const imgData = canvas.toDataURL('image/png');
-            
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
-            
             const imgProps = pdf.getImageProperties(imgData);
-            const totalPdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-            
-            let heightLeft = totalPdfHeight;
-            let position = 0;
-
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, totalPdfHeight);
-            heightLeft -= pageHeight;
-
-            while (heightLeft > 0) {
-                position -= pageHeight;
-                pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, totalPdfHeight);
-                heightLeft -= pageHeight;
-            }
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
             pdf.save(`Pedido_${clientName.replace(/\s/g, '_')}.pdf`);
+        } catch (error) { showInfoModal("Não foi possível gerar o PDF do pedido."); }
+    };
+
+    const generateMockupPdf = async (orderId, clientName) => {
+        const order = allOrders.find(o => o.id === orderId);
+        if (!order || !order.mockupUrls || order.mockupUrls.length === 0) {
+            showInfoModal("Este pedido não possui mockups para gerar PDF.");
+            return;
+        }
+
+        try {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const margin = 10;
+
+            for (let i = 0; i < order.mockupUrls.length; i++) {
+                const url = order.mockupUrls[i];
+                if (i > 0) {
+                    pdf.addPage();
+                }
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.src = url;
+                await new Promise(resolve => img.onload = resolve);
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                const dataUrl = canvas.toDataURL('image/png');
+
+                const imgProps = pdf.getImageProperties(dataUrl);
+                const aspectRatio = imgProps.width / imgProps.height;
+
+                let imgWidth = pdfWidth - (margin * 2);
+                let imgHeight = imgWidth / aspectRatio;
+                
+                if (imgHeight > pdfHeight - (margin * 2)) {
+                    imgHeight = pdfHeight - (margin * 2);
+                    imgWidth = imgHeight * aspectRatio;
+                }
+
+                const x = (pdfWidth - imgWidth) / 2;
+                const y = (pdfHeight - imgHeight) / 2;
+
+                pdf.addImage(dataUrl, 'PNG', x, y, imgWidth, imgHeight);
+            }
+            pdf.save(`Mockups_${clientName.replace(/\s/g, '_')}.pdf`);
 
         } catch (error) {
-            console.error("Erro ao gerar PDF:", error);
-            showInfoModal("Não foi possível gerar o PDF.");
-        } finally {
-            if (mockupContainer) {
-                mockupContainer.style.padding = '';
-                mockupContainer.style.flexDirection = '';
-                mockupContainer.style.gap = '';
-                mockupContainer.querySelectorAll('.mockup-image').forEach(img => {
-                    img.style.width = '';
-                    img.style.height = '';
-                    img.style.maxWidth = '';
-                });
-            }
+            console.error("Erro ao gerar PDF dos mockups:", error);
+            showInfoModal("Não foi possível gerar o PDF dos mockups.");
         }
     };
     
@@ -208,7 +216,20 @@
     DOM.btnComum.addEventListener('click', () => { if (currentOrderType === 'comum') return; currentOrderType = 'comum'; updateOrderTypeUI(); });
     DOM.btnDetalhado.addEventListener('click', () => { if (currentOrderType === 'detalhado') return; currentOrderType = 'detalhado'; updateOrderTypeUI(); });
     DOM.ordersList.addEventListener('click', (e) => { const btn = e.target.closest('button'); if (!btn) return; const id = btn.dataset.id; if (btn.classList.contains('edit-btn')) editOrder(id); if (btn.classList.contains('delete-btn')) deleteOrder(id); if (btn.classList.contains('view-btn')) viewOrder(id); });
-    DOM.viewModal.addEventListener('click', (e) => { const closeBtn = e.target.closest('#closeViewBtn'); const printBtn = e.target.closest('#printPdfBtn'); if (closeBtn) { DOM.viewModal.classList.add('hidden'); DOM.viewModal.innerHTML = ''; } if (printBtn) { generatePdf(printBtn.dataset.name); } });
+    DOM.viewModal.addEventListener('click', (e) => { 
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        if (btn.id === 'closeViewBtn') {
+            DOM.viewModal.classList.add('hidden');
+            DOM.viewModal.innerHTML = '';
+        }
+        if (btn.id === 'printPdfBtn') {
+            generateOrderPdf(btn.dataset.name);
+        }
+        if (btn.id === 'printMockupsBtn') {
+            generateMockupPdf(btn.dataset.id, btn.dataset.name);
+        }
+    });
 </script>
 </body>
 </html>
