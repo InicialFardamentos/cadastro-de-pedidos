@@ -45,7 +45,7 @@
     <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 hidden">
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <div class="mb-4 sm:mb-0">
-                <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos 1.3</h1>
+                <h1 class="text-3xl font-bold text-gray-900">Gerenciador de Pedidos 1.4</h1>
                 <p id="userEmail" class="text-gray-600 mt-1">Bem-vindo(a)!</p>
             </div>
             <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
@@ -66,7 +66,31 @@
                 <fieldset class="border p-4 rounded-lg"><legend class="text-lg font-semibold px-2">2. Arquivos da Arte (Mockup)</legend><input type="file" id="mockupFiles" class="p-2 border rounded-md w-full mt-1 text-sm text-gray-500" accept="image/*" multiple><div id="existingFilesContainer" class="text-sm text-gray-600 mt-2 space-y-1"></div></fieldset>
                 <fieldset class="border p-4 rounded-lg"><legend class="text-lg font-semibold px-2">3. Peças e Tamanhos</legend><div id="orderTypeSelector" class="flex space-x-2 mb-4"><button type="button" id="btnComum" class="tab-button active">Pedido Comum (Tamanhos por Peça)</button><button type="button" id="btnDetalhado" class="tab-button">Pedido Detalhado (Nomes por Peça)</button></div><div id="partsContainer" class="space-y-6"></div><button type="button" id="addPartBtn" class="mt-4 bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">Adicionar Peça (ex: Camisa, Calça)</button></fieldset>
                 <fieldset class="border p-4 rounded-lg"><legend class="text-lg font-semibold px-2">4. Observação Geral</legend><textarea id="generalObservation" class="w-full p-2 border rounded-md mt-2" rows="3" placeholder="Detalhes gerais, acabamentos, etc."></textarea></fieldset>
-                <fieldset class="border p-4 rounded-lg"><legend class="text-lg font-semibold px-2">5. Financeiro</legend><div id="financialsContainer" class="space-y-4 mb-4"></div><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 border-t pt-4"><input type="number" step="0.01" id="downPayment" placeholder="Adiantamento (R$)" class="p-2 border rounded-md w-full"><input type="text" id="paymentMethod" placeholder="Forma de Pagamento" class="p-2 border rounded-md w-full"><div class="bg-gray-100 p-3 rounded-lg text-center"><p class="text-sm text-gray-600">Total do Pedido</p><p id="grandTotal" class="text-2xl font-bold text-blue-600">R$ 0,00</p></div><div class="bg-red-100 p-3 rounded-lg text-center"><p class="text-sm text-red-700">Resta Pagar</p><p id="remainingTotal" class="text-2xl font-bold text-red-600">R$ 0,00</p></div></div></fieldset>
+                <fieldset class="border p-4 rounded-lg">
+                    <legend class="text-lg font-semibold px-2">5. Financeiro</legend>
+                    <div id="financialsContainer" class="space-y-4 mb-4"></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 border-t pt-4 items-end">
+                        <div>
+                            <label for="downPayment" class="text-xs font-semibold text-gray-600">Adiantamento (R$)</label>
+                            <div class="flex items-center">
+                                <span class="text-gray-500 mr-2">R$</span>
+                                <input type="number" step="0.01" id="downPayment" class="p-2 border rounded-md w-full">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="paymentMethod" class="text-xs font-semibold text-gray-600">Forma de Pagamento</label>
+                            <input type="text" id="paymentMethod" class="p-2 border rounded-md w-full">
+                        </div>
+                        <div class="bg-gray-100 p-3 rounded-lg text-center">
+                            <p class="text-sm text-gray-600">Total do Pedido</p>
+                            <p id="grandTotal" class="text-2xl font-bold text-blue-600">R$ 0,00</p>
+                        </div>
+                        <div class="bg-red-100 p-3 rounded-lg text-center">
+                            <p class="text-sm text-red-700">Resta Pagar</p>
+                            <p id="remainingTotal" class="text-2xl font-bold text-red-600">R$ 0,00</p>
+                        </div>
+                    </div>
+                </fieldset>
                 <div class="flex flex-col sm:flex-row justify-end items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 mt-8"><div id="uploadIndicator" class="text-sm text-blue-600 font-semibold hidden">Salvando...</div><button type="button" id="cancelBtn" class="bg-gray-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-gray-600">Cancelar</button><button type="submit" id="saveBtn" class="bg-green-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-green-700">Salvar Pedido</button></div>
             </form>
         </div>
@@ -113,19 +137,18 @@
     </template>
     <template id="comumPartContentTemplate"><button type="button" class="toggle-sizes-btn mt-2 bg-blue-100 text-blue-800 text-sm font-semibold py-1 px-3 rounded-lg hover:bg-blue-200">Tamanhos</button><div class="sizes-grid hidden mt-3 space-y-4"></div></template>
     <template id="detalhadoPartContentTemplate"><div class="detailed-items-list space-y-2 mt-3"><div class="grid grid-cols-12 gap-2 font-semibold text-sm px-1"><div class="col-span-5">Nome</div><div class="col-span-4">Tamanho</div><div class="col-span-2">Número</div><div class="col-span-1"></div></div></div><button type="button" class="add-detailed-row-btn mt-2 bg-gray-200 text-gray-800 text-sm py-1 px-3 rounded-lg hover:bg-gray-300">+ Adicionar Linha</button></template>
-    
     <template id="financialRowTemplate">
         <div class="financial-item grid grid-cols-4 gap-4 items-end">
-            <p class="font-semibold financial-part-name col-span-1">Peça 1</p>
+            <p class="font-semibold financial-part-name col-span-1 self-center">Peça 1</p>
             <div>
                 <label class="text-xs font-semibold text-gray-600">Quantidade</label>
                 <input type="number" class="p-2 border rounded-md w-full bg-gray-100 financial-quantity" readonly>
             </div>
             <div>
                 <label class="text-xs font-semibold text-gray-600">Valor Unitário</label>
-                <div class="flex items-center">
-                    <span class="text-gray-500 mr-2">R$</span>
-                    <input type="number" step="0.01" class="p-2 border rounded-md w-full financial-price">
+                <div class="flex items-center relative">
+                    <span class="text-gray-500 absolute left-3">R$</span>
+                    <input type="number" step="0.01" class="p-2 border rounded-md w-full financial-price pl-10">
                 </div>
             </div>
             <div class="text-right">
